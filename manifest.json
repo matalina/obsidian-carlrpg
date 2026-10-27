@@ -3,9 +3,8 @@
 	"name": "Dungeon Crawler Carl",
 	"version": "0.1.0",
 	"minAppVersion": "1.4.4",
-	"description": "Demonstrates some of the capabilities of the Obsidian API.",
-	"author": "Obsidian",
-	"authorUrl": "https://obsidian.md",
-	"fundingUrl": "https://obsidian.md/pricing",
+	"description": "Statblocks, crawler sheets, skills, spells and a play widget with Degrees of Success for running a Dungeon Crawler Carl RPG in your notes.",
+	"author": "matalina",
+	"authorUrl": "https://github.com/matalina",
 	"isDesktopOnly": false
 }
