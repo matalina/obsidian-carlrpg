@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-carlrpg",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "Statblocks, crawler sheets, skills, spells and a play widget with Degrees of Success for running a Dungeon Crawler Carl RPG in your notes.",
 	"main": "main.js",
 	"type": "module",
