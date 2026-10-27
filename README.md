@@ -227,6 +227,27 @@ crawlers:
 
 Tagging notes (`carl/creature`, `carl/character`, `carl/item`, `carl/race`, `carl/class`…) makes them easy to collect in a Base.
 
+## Callouts
+
+A family of "system interface" callouts, typed like any built-in callout:
+
+| Callout | For | Default title |
+| --- | --- | --- |
+| `> [!ai]` | The System AI speaking or describing something | System AI |
+| `> [!achievement]` | Achievements; the last paragraph is styled as the reward | New achievement! |
+| `> [!loot\|gold]` | Loot boxes, coloured by tier: `bronze`, `silver`, `gold`, `platinum`, `legendary`, `celestial` | Gold box |
+| `> [!quest]` | Quests | New quest |
+| `> [!notification]` | System messages ("The floor collapses in 3 days") | Notification |
+
+```markdown
+> [!achievement] Smush!
+> You killed a mob by dropping something heavy on it.
+>
+> Reward: You've received a Bronze Box!
+```
+
+Write your own title after the type to replace the default.
+
 ## Templates and commands
 
 | Command | Does |

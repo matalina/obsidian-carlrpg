@@ -3,6 +3,7 @@ import { CHARACTER_BLOCK, renderCharacterBlock } from './blocks/character/index'
 import { CREATURE_BLOCK, renderCreatureBlock } from './blocks/creature';
 import { MOUNT_BLOCK, renderMountBlock } from './blocks/mount';
 import { referenceBlocks } from './blocks/reference';
+import { registerCallouts } from './callouts';
 import { CarlSettings, CarlSettingTab, DEFAULT_SETTINGS } from './settings';
 import { registerTemplateCommands } from './templates/commands';
 
@@ -25,6 +26,7 @@ export default class CarlPlugin extends Plugin {
 			this.registerMarkdownCodeBlockProcessor(name, render);
 		}
 
+		registerCallouts(this);
 		registerTemplateCommands(this);
 		this.addSettingTab(new CarlSettingTab(this.app, this));
 	}
