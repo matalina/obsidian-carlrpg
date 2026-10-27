@@ -218,7 +218,7 @@ Rendered like the book: `Size: Medium (4)`, `+5 Dexterity`, `+2 Climbing and Per
 
 **Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities** show their note's `description`.
 
-**Sponsors** (`carl-sponsor`) have a `name`, `description` and the crawlers they sponsor — on the sponsor's own card and on every sponsored crawler's sheet. Crawlers are found automatically from any note whose `sponsors` links to the sponsor; list others (without notes) in `crawlers`:
+**Sponsors** (`carl-sponsor`) have a `name`, `description` and the crawlers they sponsor — on the sponsor's own card and on every sponsored crawler's sheet. Crawlers are found automatically from any note whose `sponsors` links to the sponsor with a `[[link]]` (read from Obsidian's link index, not by scanning the vault); list others (without notes) in `crawlers`:
 
 ```yaml
 name: Valtay Corporation
