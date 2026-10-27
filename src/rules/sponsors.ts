@@ -5,7 +5,7 @@ import { parseLinks } from './items';
 /**
  * Crawlers a sponsor backs, as markdown: the sponsor note's own `crawlers` list, plus every
  * note whose `sponsors` property links to this sponsor — so adding a sponsor to a character
- * is enough to list them here.
+ * is enough to list them here. Only `[[links]]` count for that, since it reads Obsidian's link index.
  */
 export function sponsoredCrawlers(app: App, sponsor: TFile | null, props: Record<string, unknown>): string[] {
 	const crawlers: string[] = [];
@@ -23,7 +23,12 @@ export function sponsoredCrawlers(app: App, sponsor: TFile | null, props: Record
 	}
 
 	if (sponsor) {
-		for (const file of app.vault.getMarkdownFiles()) {
+		// Only notes that link to the sponsor, from Obsidian's link index, rather than every note in the vault.
+		const linking = Object.entries(app.metadataCache.resolvedLinks)
+			.filter(([, targets]) => sponsor.path in targets)
+			.map(([path]) => app.vault.getAbstractFileByPath(path));
+		for (const file of linking) {
+			if (!(file instanceof TFile)) continue;
 			const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
 			if (!isRecord(frontmatter) || frontmatter.sponsors == null) continue;
 			const backs = parseLinks(frontmatter.sponsors).some(
