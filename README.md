@@ -15,6 +15,8 @@ Write a creature, crawler, item, race or class as properties (or YAML) and the p
 | `carl-item` | An item or buff card with its bonuses. |
 | `carl-race` | A race entry: size, stat and skill bonuses, abilities. |
 | `carl-class` | A class entry, same layout as races. |
+| `carl-mount` | A mount or vehicle, as it appears on the crawler's sheet. |
+| `carl-sponsor` | A sponsor: name, description and the crawlers it sponsors. |
 
 ### Two ways to feed a block
 
@@ -212,9 +214,29 @@ abilities:
 
 Rendered like the book: `Size: Medium (4)`, `+5 Dexterity`, `+2 Climbing and Performance (with a stringed instrument specialty) Skills`, then each ability.
 
-**Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities and sponsors** show their note's `description`.
+**Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities** show their note's `description`.
+
+**Sponsors** (`carl-sponsor`) have a `name`, `description` and the crawlers they sponsor — on the sponsor's own card and on every sponsored crawler's sheet. Crawlers are found automatically from any note whose `sponsors` links to the sponsor; list others (without notes) in `crawlers`:
+
+```yaml
+name: Valtay Corporation
+description: Pays well for spectacle.
+crawlers:
+  - Some crawler without a note
+```
 
 Tagging notes (`carl/creature`, `carl/character`, `carl/item`, `carl/race`, `carl/class`…) makes them easy to collect in a Base.
+
+## Templates and commands
+
+| Command | Does |
+| --- | --- |
+| **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `mount`, `sponsor` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
+| **New mob**, **New NPC**, **New crawler**, … | Asks for a name and creates the note in that type's folder (`mobs/`, `npcs/`, `crawlers/`…), then opens it. Uses your copy of the template from the templates folder when there is one, otherwise the built-in one. |
+
+`{{title}}` and `{{date}}` in a template are filled in, the same placeholders the core Templates plugin uses — so the files also work with **Templates: Insert template**.
+
+In **Settings → Dungeon Crawler Carl** you can set the templates folder (empty = the core Templates folder, else `_templates`) and the folder for each type of new note.
 
 ## Installation
 

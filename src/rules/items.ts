@@ -72,6 +72,7 @@ export function resolveItem(app: App, link: NoteLink, sourcePath: string): Item 
 export function readBonuses(props: Record<string, unknown>): Map<string, number> {
 	const bonuses = new Map<string, number>();
 	for (const [name, value] of toEntries(props.bonuses)) {
+		if (value == null || value === '') continue;
 		const amount = Number(value);
 		if (!Number.isFinite(amount)) continue;
 		const key = statKey(name);

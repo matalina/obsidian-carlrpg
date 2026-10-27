@@ -2,6 +2,7 @@ import { App } from 'obsidian';
 import { Item, Linked, linkedName, parseLinks, readBonuses, resolveItem, resolveValue } from '../../rules/items';
 import { collectStats, STATS, statKey, statMod } from '../../rules/stats';
 import { readSkillBonuses, skillKey } from '../../rules/skills';
+import { sponsoredCrawlers } from '../../rules/sponsors';
 import { asText, isRecord, titleCase, toEntries, toRecord } from '../yaml';
 
 export const GEAR_SLOTS: [key: string, label: string][] = [
@@ -20,6 +21,12 @@ export const DEFAULT_HEALTH_SLOTS = 10;
 export interface GearEntry {
 	slot: string;
 	item: Item;
+}
+
+export interface SponsorEntry {
+	sponsor: Linked;
+	/** Crawlers the sponsor backs, as markdown links. */
+	crawlers: string[];
 }
 
 export interface SkillLine {
@@ -56,7 +63,7 @@ export interface Sheet {
 	pet: Linked | null;
 	mount: Linked | null;
 	deity: Linked | null;
-	sponsors: Linked[];
+	sponsors: SponsorEntry[];
 	/** Skills the character lists, with race/class ranks added, plus skills only race/class grant. */
 	skills: SkillLine[];
 	/** Every linked note, so the block can re-render when one changes. */
@@ -83,6 +90,10 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 	const deity = linked(data.deity);
 	const sponsors = (Array.isArray(data.sponsors) ? data.sponsors : data.sponsors == null ? [] : [data.sponsors])
 		.flatMap((s) => linked(s) ?? []);
+	const sponsorEntries = sponsors.map((sponsor) => ({
+		sponsor,
+		crawlers: sponsoredCrawlers(app, sponsor.file, sponsor.props),
+	}));
 
 	// Race and class bonuses are part of the unenhanced score; gear and external buffs enhance it.
 	const natural = [race, cls].flatMap((l) => (l ? [source(l)] : []));
@@ -111,7 +122,7 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 		pet,
 		mount,
 		deity,
-		sponsors,
+		sponsors: sponsorEntries,
 		skills: skillLines(data, [race, cls].flatMap((l) => l ?? [])),
 		linked: [...gearItems, ...buffs, ...[race, cls, pet, mount, deity, ...sponsors].flatMap((l) => l ?? [])],
 		mod,

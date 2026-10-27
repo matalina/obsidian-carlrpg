@@ -127,6 +127,15 @@
 	margin-top: var(--size-4-1);
 }
 
+/* A sheet panel shown on its own note (carl-mount) */
+.carl-standalone {
+	max-width: 24em;
+}
+
+.carl-sponsored {
+	margin-top: var(--size-4-3);
+}
+
 /* ── Character sheet ─────────────────────────────────────────── */
 
 .carl-character {

@@ -21,9 +21,10 @@ export function renderCharacterBlock(
 class CharacterBlock extends LiveBlock {
 	protected renderData(data: Record<string, unknown>, md: RenderMarkdown) {
 		const sheet = buildSheet(this.app, data, this.sourcePath);
+		// Sponsors list every crawler that links to them, so any note change may alter that list.
 		this.watch(
 			sheet.linked.flatMap((l) => (l.file ? [l.file.path] : [])),
-			sheet.linked.some((l) => l.link && !l.file),
+			sheet.linked.some((l) => l.link && !l.file) || sheet.sponsors.length > 0,
 		);
 
 		const root = this.containerEl.createDiv({ cls: 'carl-block carl-character' });

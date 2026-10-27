@@ -1,17 +1,20 @@
-import { formatSize } from '../rules/size';
-import { App, MarkdownPostProcessorContext } from 'obsidian';
+import { App, MarkdownPostProcessorContext, TFile } from 'obsidian';
 import { bonusLabel } from '../rules/items';
+import { formatSize } from '../rules/size';
 import { describeSkillBonuses, readSkillBonuses } from '../rules/skills';
+import { sponsoredCrawlers } from '../rules/sponsors';
 import { formatMod, statKey, STATS } from '../rules/stats';
-import { LiveBlock, noteName, OBSIDIAN_PROPERTIES, RenderMarkdown, renderExtras, renderGrid } from './shared';
+import { LiveBlock, noteName, OBSIDIAN_PROPERTIES, RenderMarkdown } from './shared';
 import { asText, titleCase, toEntries } from './yaml';
 
-// Statblock-style cards for the notes a character links to: items (gear and buffs), races and classes.
+// Cards for the notes a character links to: items (gear and buffs), races and classes.
+// Laid out like the book's race/class entries — a description, then one bullet per trait.
 // Same properties the character sheet reads, so one note feeds both.
 
 export const ITEM_BLOCK = 'carl-item';
 export const RACE_BLOCK = 'carl-race';
 export const CLASS_BLOCK = 'carl-class';
+export const SPONSOR_BLOCK = 'carl-sponsor';
 
 interface ReferenceKind {
 	block: string;
@@ -19,8 +22,8 @@ interface ReferenceKind {
 	subtitle: (data: Record<string, unknown>) => string;
 	/** Properties this card shows in a fixed place; the rest are listed as extras. */
 	known: string[];
-	/** `card`: statblock with a bonus row. `list`: one bullet per trait, like the book's race/class entries. */
-	layout: 'card' | 'list';
+	/** Lists the crawlers this note sponsors (sponsors only). */
+	crawlers?: boolean;
 }
 
 const KINDS: ReferenceKind[] = [
@@ -30,20 +33,23 @@ const KINDS: ReferenceKind[] = [
 			.filter(Boolean)
 			.map((s) => titleCase(asText(s)))
 			.join(' · ') || 'Item',
-		known: ['name', 'slot', 'rarity', 'type', 'bonuses', 'description'],
-		layout: 'card',
+		known: ['name', 'slot', 'rarity', 'type', 'bonuses', 'description', 'abilities'],
 	},
 	{
 		block: RACE_BLOCK,
 		subtitle: () => 'Race',
 		known: ['name', 'size', 'bonuses', 'skills', 'description', 'abilities'],
-		layout: 'list',
 	},
 	{
 		block: CLASS_BLOCK,
 		subtitle: () => 'Class',
 		known: ['name', 'size', 'bonuses', 'skills', 'description', 'abilities'],
-		layout: 'list',
+	},
+	{
+		block: SPONSOR_BLOCK,
+		subtitle: () => 'Sponsor',
+		known: ['name', 'description', 'crawlers'],
+		crawlers: true,
 	},
 ];
 
@@ -67,24 +73,28 @@ class ReferenceBlock extends LiveBlock {
 		header.createDiv({ cls: 'carl-name', text: asText(data.name) || noteName(this.sourcePath) });
 		header.createDiv({ cls: 'carl-subtitle', text: this.kind.subtitle(data) });
 
-		if (this.kind.layout === 'list') this.renderList(block, data, md);
-		else this.renderCard(block, data, md);
+		this.renderTraits(block, data, md);
+		if (this.kind.crawlers) this.renderCrawlers(block, data, md);
 	}
 
-	// Items: bonuses as a row like a creature's stats ("DEX +2 | CHA +1"), then description and extras.
-	private renderCard(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) {
-		const bonuses = bonusEntries(data).map(([key, amount]) => [bonusLabel(key), formatMod(amount)]);
-		renderGrid(block, 'carl-stats carl-bonus-row', bonuses);
-
-		const description = asText(data.description);
-		if (description) md(description, block.createDiv({ cls: 'carl-section carl-description' }));
-
-		renderExtras(block, data, (key) => this.kind.known.includes(key), md);
+	// Every crawler's interface shows who a sponsor backs. Re-renders on any note change,
+	// since a crawler anywhere in the vault can add this sponsor.
+	private renderCrawlers(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) {
+		this.watch([], true);
+		const file = this.app.vault.getAbstractFileByPath(this.sourcePath);
+		const crawlers = sponsoredCrawlers(this.app, file instanceof TFile ? file : null, data);
+		const section = block.createDiv({ cls: 'carl-sponsored' });
+		section.createDiv({ cls: 'carl-label', text: 'Sponsored crawlers' });
+		if (!crawlers.length) {
+			section.createDiv({ cls: 'carl-muted', text: 'None yet' });
+			return;
+		}
+		const list = section.createEl('ul', { cls: 'carl-trait-list' });
+		for (const crawler of crawlers) md(crawler, list.createEl('li'));
 	}
 
-	// Races and classes, like the book: a description, then one bullet per trait —
 	// "Size: Medium (4)", "+5 Dexterity", "+2 Climbing and Perception Skills", each ability, and any other property.
-	private renderList(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) {
+	private renderTraits(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) {
 		const description = asText(data.description);
 		if (description) md(description, block.createDiv({ cls: 'carl-description' }));
 
@@ -109,6 +119,7 @@ class ReferenceBlock extends LiveBlock {
 
 function bonusEntries(data: Record<string, unknown>): [key: string, amount: number][] {
 	return toEntries(data.bonuses).flatMap(([name, value]) => {
+		if (value == null || value === '') return [];
 		const amount = Number(value);
 		return Number.isFinite(amount) ? [[statKey(name), amount]] : [];
 	});

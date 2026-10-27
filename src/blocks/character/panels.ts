@@ -20,7 +20,14 @@ export function renderPanels(root: HTMLElement, sheet: Sheet, md: RenderMarkdown
 	if (sheet.deity) renderLinkedText(panel(grid, 'Deity'), sheet.deity, md);
 	listPanel(grid, 'Racial abilities', [...asList(sheet.race?.props.abilities), ...asList(d['racial-abilities'])], md);
 	listPanel(grid, 'Class abilities', [...asList(sheet.class?.props.abilities), ...asList(d['class-abilities'])], md);
-	for (const sponsor of sheet.sponsors) renderLinkedText(panel(grid, 'Sponsor'), sponsor, md);
+	for (const { sponsor, crawlers } of sheet.sponsors) {
+		const body = panel(grid, 'Sponsor');
+		renderLinkedText(body, sponsor, md);
+		if (crawlers.length) {
+			body.createDiv({ cls: 'carl-subhead', text: 'Sponsored crawlers' });
+			rows(body, crawlers, md);
+		}
+	}
 
 	if (!grid.childElementCount) grid.remove();
 }
@@ -84,7 +91,7 @@ function renderPet(body: HTMLElement, pet: Linked, md: RenderMarkdown) {
 }
 
 // hp-slots/hp-current, size, occupants, move, dr, accessories.
-function renderMount(body: HTMLElement, mount: Linked, md: RenderMarkdown) {
+export function renderMount(body: HTMLElement, mount: Linked, md: RenderMarkdown) {
 	const p = mount.props;
 	companionName(body, mount, md);
 	// Vehicles have no CON: each health slot is worth the size value (1–8).

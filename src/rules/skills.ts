@@ -14,6 +14,7 @@ export function skillKey(name: string): string {
 export function readSkillBonuses(props: Record<string, unknown>): SkillBonus[] {
 	return toEntries(props.skills).flatMap(([name, value]) => {
 		const fields = isRecord(value) || Array.isArray(value) ? toRecord(value) : { rank: value };
+		if (fields.rank == null || fields.rank === '') return [];
 		const rank = Number(fields.rank);
 		return Number.isFinite(rank) ? [{ name, rank, notes: asText(fields.notes) }] : [];
 	});
