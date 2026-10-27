@@ -11,8 +11,9 @@ export function skillKey(name: string): string {
 	return name.trim().toLowerCase();
 }
 
-export function readSkillBonuses(props: Record<string, unknown>): SkillBonus[] {
-	return toEntries(props.skills).flatMap(([name, value]) => {
+// `key` is "skills" or "spells" — races and classes grant both the same way.
+export function readSkillBonuses(props: Record<string, unknown>, key = 'skills'): SkillBonus[] {
+	return toEntries(props[key]).flatMap(([name, value]) => {
 		const fields = isRecord(value) || Array.isArray(value) ? toRecord(value) : { rank: value };
 		if (fields.rank == null || fields.rank === '') return [];
 		const rank = Number(fields.rank);
@@ -22,7 +23,7 @@ export function readSkillBonuses(props: Record<string, unknown>): SkillBonus[] {
 
 // "+2 Climbing, Perception, and Performance (with a stringed instrument specialty) Skills" —
 // one line per rank, like the book's race and class entries.
-export function describeSkillBonuses(skills: SkillBonus[]): string[] {
+export function describeSkillBonuses(skills: SkillBonus[], noun = 'Skill'): string[] {
 	const byRank = new Map<number, string[]>();
 	for (const skill of skills) {
 		const label = titleCase(skill.name) + (skill.notes ? ` (${skill.notes})` : '');
@@ -30,7 +31,7 @@ export function describeSkillBonuses(skills: SkillBonus[]): string[] {
 	}
 	return [...byRank].map(([rank, names]) => {
 		const sign = rank < 0 ? String(rank) : `+${rank}`;
-		return `${sign} ${joinList(names)} ${names.length === 1 ? 'Skill' : 'Skills'}`;
+		return `${sign} ${joinList(names)} ${names.length === 1 ? noun : `${noun}s`}`;
 	});
 }
 

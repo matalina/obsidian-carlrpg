@@ -29,7 +29,7 @@ export abstract class LiveBlock extends MarkdownRenderChild {
 	constructor(
 		protected app: App,
 		private blockName: string,
-		private source: string,
+		protected source: string,
 		containerEl: HTMLElement,
 		protected sourcePath: string,
 	) {
@@ -54,6 +54,11 @@ export abstract class LiveBlock extends MarkdownRenderChild {
 	}
 
 	protected abstract renderData(data: Record<string, unknown>, renderMarkdown: RenderMarkdown): void;
+
+	/** Redraws the block, e.g. after a choice in its own controls. */
+	protected rerender() {
+		this.render();
+	}
 
 	private render() {
 		if (this.content) this.removeChild(this.content);

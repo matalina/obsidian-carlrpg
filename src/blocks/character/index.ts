@@ -2,7 +2,7 @@ import { App, MarkdownPostProcessorContext } from 'obsidian';
 import { LiveBlock, RenderMarkdown } from '../shared';
 import { buildSheet } from './model';
 import { renderPanels } from './panels';
-import { renderGearAndStory, renderHotlist, renderInventory, renderSkills } from './sections';
+import { renderGearAndStory, renderHotlist, renderInventory, renderSkills, renderSpells } from './sections';
 import { renderAttackTable, renderTop } from './top';
 
 export const CHARACTER_BLOCK = 'carl-character';
@@ -24,7 +24,7 @@ class CharacterBlock extends LiveBlock {
 		// Sponsors list every crawler that links to them, so any note change may alter that list.
 		this.watch(
 			sheet.linked.flatMap((l) => (l.file ? [l.file.path] : [])),
-			sheet.linked.some((l) => l.link && !l.file) || sheet.sponsors.length > 0,
+			sheet.linked.some((l) => l.link?.bracketed && !l.file) || sheet.sponsors.length > 0,
 		);
 
 		const root = this.containerEl.createDiv({ cls: 'carl-block carl-character' });
@@ -33,6 +33,7 @@ class CharacterBlock extends LiveBlock {
 		renderHotlist(root, sheet, md);
 		renderGearAndStory(root, sheet, md);
 		renderSkills(root, sheet, md);
+		renderSpells(root, sheet, md);
 		renderInventory(root, sheet, md);
 		renderPanels(root, sheet, md);
 	}

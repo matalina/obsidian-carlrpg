@@ -13,8 +13,10 @@ Write a creature, crawler, item, race or class as properties (or YAML) and the p
 | `carl-creature` | A creature/mob statblock: health slots, Level / Surprise / Evade / Move / DR, stats with mods, attacks and notes. Also used for pets. |
 | `carl-character` | A full crawler sheet laid out like the printed one. |
 | `carl-item` | An item or buff card with its bonuses. |
-| `carl-race` | A race entry: size, stat and skill bonuses, abilities. |
+| `carl-race` | A race entry: size, stat, skill and spell bonuses, abilities. |
 | `carl-class` | A class entry, same layout as races. |
+| `carl-skill` / `carl-spell` | A skill or spell entry like the book's, with upgrades. |
+| `carl-actions` | A play panel for a party and their opponents: rolls, health, mana, debuffs, hotlist. |
 | `carl-mount` | A mount or vehicle, as it appears on the crawler's sheet. |
 | `carl-sponsor` | A sponsor: name, description and the crawlers it sponsors. |
 
@@ -227,6 +229,124 @@ crawlers:
 
 Tagging notes (`carl/creature`, `carl/character`, `carl/item`, `carl/race`, `carl/class`…) makes them easy to collect in a Base.
 
+## Skills and spells — `carl-skill`, `carl-spell`
+
+Give each skill or spell its own note, then list it on a crawler under `skills:` or `spells:` with the crawler's rank:
+
+```yaml
+skills:
+  - "[[Dagger]]":
+      rank: 5
+spells:
+  - "[[Heal Others]]":
+      rank: 2
+```
+
+The note says how it's checked and supplies the stat, damage and upgrades; the crawler's entry can still override `stat`.
+
+```yaml
+check: attack            # passive | opposed | unopposed | stat | attack
+attack: melee            # attack only: melee | ranged
+stat: dex
+opposed-by: int          # opposed only: the antagonist's stat (defaults to `stat`)
+ai-favor: 1
+base-damage: 1d4 + STR Piercing
+limitations: …
+description: …
+upgrades:
+  5: +1d4 base damage, and this Attack deals Armor-Piercing damage (ignores DR).
+  10: +1d4 base damage, …
+  15: +1d4 base damage, …
+```
+
+**Passive skills** attach to an attack instead of being rolled:
+
+```yaml
+check: passive
+applies-to: "[[Pugilism]]"   # skill/attack names or links, or a kind: melee | ranged
+optional: true               # chosen per attack (Aiming); otherwise always on (Iron Punch)
+add-rank: true               # adds this skill's rank to the to-hit
+disadvantage: true           # applying it means rolling with Disadvantage
+base-damage: 1d2             # extra base dice (doubled on a Critical Hit)
+damage: 1d4                  # extra bonus damage on a hit
+```
+
+Always-on passives are folded into the attack's to-hit and damage on the sheet and in the widget; optional ones are checkboxes on the attack in the widget. Using the attack marks the passive ✔.
+
+Upgrades are read for damage: **"+1d4 base damage"**, **"+1d4 damage"**, and **"Add 1 Rank damage die"** — the dice for the skill's current rank from Table 37 (rank 5 → +1d4, rank 15 → +1d8 & +1d6).
+
+Spells add `quote`, `keywords` (the italic line, e.g. `Attack, Fire`), `mana-cost`, `range`, `duration`, `cooldown` and `heal` (dice of Health Bar slots).
+
+- Each upgrade reached that says **"+1d4 base damage"** adds that die to the damage, so a rank-10 Dagger rolls `1d4 + 1d4 + 1d4 + STR`.
+- Attack skills and spells appear in the sheet's Attacks table with to-hit and damage worked out; spells get their own Spells table.
+- Races and classes grant spell ranks the same way as skills: `spells: { web: 3 }` → "+3 Web Spell".
+
+## Actions widget — `carl-actions`
+
+A play panel for session notes: the party stacked on the left, the opponents on the right.
+
+````markdown
+```carl-actions
+party:                 # crawler notes; `sheet:` works for one, and it defaults to the page itself
+  - "[[Carl]]"
+  - "[[Donut]]"
+opponents:             # name: note — the name tells two of the same mob apart
+  Llama A: "[[Bad Llama]]"
+  Llama B: "[[Bad Llama]]"
+targets:               # saved when a crawler picks a target; defaults to the first opponent
+  Carl: Llama A
+floor: 3               # F; defaults to this page's `floor`, then the first crawler's
+```
+````
+
+Plain lists of links work for both (`- "[[Bad Llama]]"`); repeats are named "Bad Llama 2" and so on. Each crawler's panel has **Target** buttons, one per opponent; their attacks and opposed checks go against the one they pick, and the targeted opponent shows a badge with the crawler's name. Each opponent shows its health, debuffs, stats and attacks; every attack has an **Evade** button for each crawler (rolling that crawler's Evade against its to-hit) and a **Damage** roll.
+
+**Mob and NPC notes are never changed.** Their health and debuffs for the fight are saved into the block itself, so every encounter on a page keeps its own state:
+
+````markdown
+```carl-actions
+party: ["[[Carl]]"]
+opponents:
+  Llama A: "[[Bad Llama]]"
+  Llama B: "[[Bad Llama]]"
+encounter:
+  Llama A: { hp: 2, debuffs: [Burning] }
+  Llama B: { hp: 3 }
+```
+````
+
+**Reset** on an opponent clears its entry. Each crawler's health, mana, debuffs, skill marks and hotlist are written to that crawler's own note.
+
+**PvP:** put a crawler note under `opponents` and it gets a full crawler panel on the right, with its own **Target** buttons for the party. A crawler's Evade is a roll, not a number, so an attack on a crawler rolls the defender's Evade (d20 + DEX mod + buffs) as the target — both rolls appear in the toast and the log. Opposed checks use the defender's enhanced stat mods. Like the party, an opposing crawler's health, mana and debuffs are written to their own note.
+
+````markdown
+```carl-actions
+party: ["[[Carl]]"]
+opponents:
+  Frank: "[[Frank Q]]"
+targets:
+  Carl: Frank
+  Frank: Carl
+```
+````
+
+| Section | Does |
+| --- | --- |
+| Roll | Normal, Advantage or Disadvantage (2d20, keep the higher/lower) for every roll. A passive that brings Disadvantage cancels Advantage. |
+| Target | Leave empty for the rules' difficulty — stat check 10 + F, unopposed 10 + 2F, opposed 10 + the target's stat mod + F, attack vs its Evade (rolled, for a crawler) — or type a number to override. Every roll gets a Degree of Success; natural 20 and 1 always count. |
+| Health | Click a slot to set current health; click the last remaining slot again to lose it. The heading shows what a slot is worth (the CON mod). Crawlers save `hp-current` on their note; opponents save to the block's `encounter`. |
+| Mana | −, +, Full — writes `mana-current`. |
+| Debuffs | Add or remove debuffs — the crawler's `debuffs`, or an opponent's `encounter` entry. |
+| Checks | Each stat (d20 + stat mod) and, for crawlers, Evade (d20 + DEX mod + buffs). Mob Evade shows its target number. |
+| Skills | d20 + rank + stat mod against the difficulty for the skill's `check`; attack skills roll to hit and damage. Passives attached to an attack are checkboxes on that attack (always-on ones are already included); other passives just record the use. Any use marks the skill ✔ (`checked: true`). |
+| Spells | Every spell has a Cast button: spends `mana-cost` (refused if there isn't enough), then rolls like a skill — attack spells roll to hit and damage, heals roll their `heal` dice. |
+| Attacks | Crawler attacks and attack skills: d20 + rank + stat mod to hit against the targeted opponent's Evade, then damage on a hit — a Critical Hit doubles the base dice, an Amazing Success adds F. Optional passives (Aiming) are checkboxes here. |
+| Opponents | Each opponent's attacks show their to-hit, with **Evade** (the crawler rolls against it) and **Damage**. |
+| Hotlist | **Use** takes one from the matching inventory item's `quantity`; at 0 it stays in the inventory and leaves the hotlist. |
+
+Formulas understand `F` (floor), `S` (size value) and stat mods (`1d4 + STR`). Every roll pops up as a notice in the corner (10 seconds, click to dismiss) and is appended to the page under **## Roll log**, e.g.
+`- 14:05 · Carl · **Pugilism**: d20[13] + 6 rank + 4 Str = **23** vs 15 → **Amazing Success**`.
+
 ## Callouts
 
 A family of "system interface" callouts, typed like any built-in callout:
@@ -252,7 +372,7 @@ Write your own title after the type to replace the default.
 
 | Command | Does |
 | --- | --- |
-| **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `mount`, `sponsor` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
+| **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `skill`, `spell`, `mount`, `sponsor` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
 | **New mob**, **New NPC**, **New crawler**, … | Asks for a name and creates the note in that type's folder (`mobs/`, `npcs/`, `crawlers/`…), then opens it. Uses your copy of the template from the templates folder when there is one, otherwise the built-in one. |
 
 `{{title}}` and `{{date}}` in a template are filled in, the same placeholders the core Templates plugin uses — so the files also work with **Templates: Insert template**.

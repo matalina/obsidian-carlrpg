@@ -1,10 +1,10 @@
 import { formatSize } from '../../rules/size';
 import { setTooltip } from 'obsidian';
 import { formatBonuses, isMissing, linkMarkdown } from '../../rules/items';
-import { formatMod, statKey, statMod } from '../../rules/stats';
+import { formatMod, statMod } from '../../rules/stats';
 import { describeArea, noteName, readPair, RenderMarkdown, renderHealth } from '../shared';
-import { asText, titleCase, toEntries, toRecord } from '../yaml';
-import { DEFAULT_HEALTH_SLOTS, MAX_EXTERNAL_BUFFS, Sheet } from './model';
+import { asText, titleCase } from '../yaml';
+import { attackPlans, DEFAULT_HEALTH_SLOTS, MAX_EXTERNAL_BUFFS, Sheet, withStatMods } from './model';
 import { field, op, panel, table, text } from './ui';
 
 // Page 1: identity and health across the top, stats in three columns, then evade/DR/mana,
@@ -140,43 +140,46 @@ function renderBuffs(parent: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 }
 
 /**
- * Attacks table: Name | To hit (rank + stat mod) | Damage (dice + stat mod) | Effects.
- * `to-hit`/`damage` written out in full override the calculated values.
+ * Attacks table: Name | To hit | Damage | Effects. Covers the `attacks` entries and attack skills and
+ * spells, with always-on passives folded in (Iron Punch on Pugilism) and optional ones listed.
  */
 export function renderAttackTable(root: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
-	const attacks = toEntries(sheet.data.attacks);
-	if (!attacks.length) return;
+	const plans = attackPlans(sheet);
+	if (!plans.length) return;
 
 	const body = table(panel(root, 'Attacks'), ['Name', 'To hit', 'Damage', 'Effects'], 'carl-attack-table');
-	for (const [name, details] of attacks) {
-		const f = toRecord(details);
+	for (const plan of plans) {
 		const row = body.createEl('tr');
-		row.createEl('th', { text: titleCase(name) });
+		md(plan.markdown, row.createEl('th'));
 
 		const toHit = row.createEl('td');
-		if (f['to-hit'] != null) toHit.setText(asText(f['to-hit']));
-		else if (f.rank != null || f.stat != null) {
-			const rank = Number(f.rank) || 0;
-			const statMod = f.stat == null ? 0 : sheet.mod(asText(f.stat));
-			toHit.createDiv({ cls: 'carl-total', text: formatMod(rank + statMod) });
-			toHit.createDiv({ cls: 'carl-muted', text: `rank ${rank} + ${statLabel(f.stat)} ${formatMod(statMod)}` });
+		if (plan.toHitText) toHit.setText(plan.toHitText);
+		else if (plan.parts.length) {
+			const total = plan.parts.reduce((sum, [, v]) => sum + v, 0);
+			toHit.createDiv({ cls: 'carl-total', text: formatMod(total) });
+			toHit.createDiv({
+				cls: 'carl-muted',
+				text: plan.parts.map(([label, v]) => `${label} ${formatMod(v)}`).join(' · '),
+			});
 		}
 
 		const damage = row.createEl('td');
-		if (f.damage != null) damage.setText(asText(f.damage));
-		else if (f.dice != null) {
-			const stat = f['damage-stat'];
-			const statMod = stat == null ? 0 : sheet.mod(asText(stat));
-			damage.createDiv({ cls: 'carl-total', text: `${asText(f.dice)}${statMod ? formatMod(statMod) : ''}` });
-			if (stat != null) damage.createDiv({ cls: 'carl-muted', text: `+ ${statLabel(stat)} mod` });
+		if (plan.damage) {
+			const bonus = plan.bonusDice.length ? ` + ${plan.bonusDice.join(' + ')}` : '';
+			damage.createDiv({ cls: 'carl-total', text: withStatMods(plan.damage, sheet.statMods) + bonus });
 		}
 
-		const limit = asText(f.limit);
-		const effects = [describeArea(f).join(', '), limit && `(${limit})`, asText(f.effect)].filter(Boolean);
-		md(effects.join(' '), row.createEl('td'));
+		const info = plan.line?.info;
+		const effects = [
+			describeArea(plan.area).join(', '),
+			plan.limit && `(${plan.limit})`,
+			plan.effect,
+			info && !plan.line?.spell && info.aiFavor && `AI favor ${info.aiFavor}`,
+			plan.line?.spell && info?.manaCost != null && `${info.manaCost} MP`,
+			...plan.applied.map((p) => `+ ${p.line.markdown}`),
+			...plan.optional.map((p) => `${p.line.markdown} (optional)`),
+			plan.disadvantage && 'Disadvantage',
+		].filter(Boolean);
+		md(effects.join(' · '), row.createEl('td'));
 	}
-}
-
-function statLabel(stat: unknown): string {
-	return titleCase(statKey(asText(stat)));
 }

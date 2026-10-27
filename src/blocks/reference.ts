@@ -38,12 +38,12 @@ const KINDS: ReferenceKind[] = [
 	{
 		block: RACE_BLOCK,
 		subtitle: () => 'Race',
-		known: ['name', 'size', 'bonuses', 'skills', 'description', 'abilities'],
+		known: ['name', 'size', 'bonuses', 'skills', 'spells', 'description', 'abilities'],
 	},
 	{
 		block: CLASS_BLOCK,
 		subtitle: () => 'Class',
-		known: ['name', 'size', 'bonuses', 'skills', 'description', 'abilities'],
+		known: ['name', 'size', 'bonuses', 'skills', 'spells', 'description', 'abilities'],
 	},
 	{
 		block: SPONSOR_BLOCK,
@@ -103,6 +103,7 @@ class ReferenceBlock extends LiveBlock {
 		if (size) bullets.push(`Size: ${size}`);
 		for (const [key, amount] of bonusEntries(data)) bullets.push(`${formatMod(amount)} ${bonusName(key)}`);
 		bullets.push(...describeSkillBonuses(readSkillBonuses(data)));
+		bullets.push(...describeSkillBonuses(readSkillBonuses(data, 'spells'), 'Spell'));
 		for (const [name, text] of toEntries(data.abilities)) {
 			bullets.push(text == null ? name : `**${titleCase(name)}:** ${asText(text)}`);
 		}

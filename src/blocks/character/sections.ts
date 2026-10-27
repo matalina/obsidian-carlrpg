@@ -80,7 +80,7 @@ export function renderSkills(root: HTMLElement, sheet: Sheet, md: RenderMarkdown
 	);
 	for (const skill of sheet.skills) {
 		const row = body.createEl('tr');
-		md(skill.name, row.createEl('th'));
+		md(skill.markdown, row.createEl('th'));
 		const rank = row.createEl('td', {
 			cls: skill.rankSources.length ? 'carl-center is-natural' : 'carl-center',
 			text: skill.rank == null ? '' : String(skill.rank),
@@ -93,6 +93,32 @@ export function renderSkills(root: HTMLElement, sheet: Sheet, md: RenderMarkdown
 		row.createEl('td', { text: skill.type });
 		md(skill.notes, row.createEl('td'));
 		row.createEl('td', { cls: 'carl-center carl-check', text: skill.checked ? '✔' : '' });
+	}
+}
+
+/** Spells: Name | Rank | Mana | Range | Duration | Check | Notes | ✔ — details from each spell's note. */
+export function renderSpells(root: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
+	if (!sheet.spells.length) return;
+	const body = table(
+		panel(root, 'Spells'),
+		['Name', 'Rank', 'Mana', 'Range', 'Duration', 'Check', 'Notes', '✔'],
+		'carl-skill-table',
+	);
+	for (const spell of sheet.spells) {
+		const info = spell.info;
+		const row = body.createEl('tr');
+		md(spell.markdown, row.createEl('th'));
+		const rank = row.createEl('td', {
+			cls: spell.rankSources.length ? 'carl-center is-natural' : 'carl-center',
+			text: spell.rank == null ? '' : String(spell.rank),
+		});
+		if (spell.rankSources.length) setTooltip(rank, spell.rankSources.join('\n'));
+		row.createEl('td', { cls: 'carl-center', text: info?.manaCost == null ? '' : String(info.manaCost) });
+		row.createEl('td', { text: info?.range ?? '' });
+		row.createEl('td', { text: info?.duration ?? '' });
+		row.createEl('td', { text: spell.type });
+		md(spell.notes, row.createEl('td'));
+		row.createEl('td', { cls: 'carl-center carl-check', text: spell.checked ? '✔' : '' });
 	}
 }
 
