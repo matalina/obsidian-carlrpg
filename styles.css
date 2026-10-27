@@ -179,8 +179,8 @@
 }
 
 .carl-field-value.is-natural {
-	text-decoration: underline dotted;
-	text-underline-offset: 3px;
+	/* A dotted border rather than text-decoration, which older mobile webviews only partly support. */
+	border-bottom: 1px dotted currentColor;
 }
 
 .carl-field.is-total .carl-field-value {
