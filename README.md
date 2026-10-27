@@ -22,7 +22,7 @@ Write a creature, crawler, item, race or class as properties (or YAML) and the p
 
 ### Two ways to feed a block
 
-**From the note's properties (recommended).** Put the data in the note's properties and leave the block empty:
+**From the note's properties (recommended — and required for any note `carl-actions` links to).** Put the data in the note's properties and leave the block empty:
 
 ````markdown
 ---
@@ -284,6 +284,10 @@ Spells add `quote`, `keywords` (the italic line, e.g. `Attack, Fire`), `mana-cos
 ## Actions widget — `carl-actions`
 
 A play panel for session notes: the party stacked on the left, the opponents on the right.
+
+> [!IMPORTANT]
+> **Crawlers, mobs and NPCs must keep their data in properties.**
+> The widget reads each linked note's **properties** only. A note whose stats live in YAML inside a `carl-character` / `carl-creature` block (rather than in the note's properties with an empty block) shows up with no stats, health or attacks. Move the YAML into the note's properties and leave the block empty — see [Two ways to feed a block](#two-ways-to-feed-a-block).
 
 ````markdown
 ```carl-actions
