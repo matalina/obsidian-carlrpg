@@ -1,92 +1,257 @@
-# Obsidian Sample Plugin
+# Dungeon Crawler Carl RPG for Obsidian
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+Statblocks and character sheets for the **Dungeon Crawler Carl roleplaying game**, rendered right inside your Obsidian notes.
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+Write a creature, crawler, item, race or class as properties (or YAML) and the plugin draws it the way the book does — with stat modifiers, health slots, enhanced scores and skill ranks worked out for you. Link a character to its gear, race and class notes and the sheet adds up their bonuses, updating live as you edit them.
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
+> Unofficial fan project. *Dungeon Crawler Carl* is © Matt Dinniman; the roleplaying game is published by Renegade Game Studios. This plugin contains no game text — you bring your own content.
 
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open modal (simple)" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and outputs a Notice on click.
-- Registers a global interval which logs 'setInterval' to the console.
+## Blocks
 
-## First time developing plugins?
+| Block | Draws |
+| --- | --- |
+| `carl-creature` | A creature/mob statblock: health slots, Level / Surprise / Evade / Move / DR, stats with mods, attacks and notes. Also used for pets. |
+| `carl-character` | A full crawler sheet laid out like the printed one. |
+| `carl-item` | An item or buff card with its bonuses. |
+| `carl-race` | A race entry: size, stat and skill bonuses, abilities. |
+| `carl-class` | A class entry, same layout as races. |
 
-Quick starting guide for new plugin devs:
+### Two ways to feed a block
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `src/main.ts` to `main.js`.
-- Make changes to `src/main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+**From the note's properties (recommended).** Put the data in the note's properties and leave the block empty:
 
-## Releasing new releases
+````markdown
+---
+level: 3
+type: mob
+size: large
+hp-slots: 3
+strength: 2
+dexterity: 6
+---
+```carl-creature
+```
+````
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+Properties are editable in the Properties panel, show up in [Bases](https://help.obsidian.md/bases), and links in them update when you rename a note.
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+**Inline YAML** — handy for a quick one-off that nothing links to:
 
-## Adding your plugin to the community plugin list
+````markdown
+```carl-creature
+name: Bad Llama
+level: 3
+hp-slots: 3
+```
+````
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+Lists can be written as plain maps or as lists of single-key maps (`- strength: 2`) — both work everywhere.
 
-## How to use
+## Creatures — `carl-creature`
 
-- Clone this repo.
-- Make sure your NodeJS is at least v18 (`node --version`).
-- `npm i` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
-
-## Manually installing the plugin
-
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
-
-## Improve code quality with eslint
-
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code.
-- This project already has eslint preconfigured, you can invoke a check by running`npm run lint`
-- Together with a custom eslint [plugin](https://github.com/obsidianmd/eslint-plugin) for Obsidan specific code guidelines.
-- A GitHub action is preconfigured to automatically lint every commit on all branches.
-
-## Funding URL
-
-You can include funding URLs where people who use your plugin can financially support it.
-
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
-
-```json
-{
-	"fundingUrl": "https://buymeacoffee.com"
-}
+```yaml
+name: Bad Llama            # optional; defaults to the note's name
+level: 3
+type: mob
+size: large                # tiny … gargantuan, a number 1–8, or "large (5)"
+creature: mutated
+hp-slots: 3
+hp-current: 3              # optional; lower it to grey out lost slots
+surprise: 11+F
+evade: 13+F
+move: 20+S
+dr: 2
+strength: 2
+intelligence: 1
+constitution: 3
+dexterity: 6
+charisma: 1
+attacks:
+  - lava spit:
+      to-hit: 13+F
+      damage: 1d8+F Fire
+      range: 30ft          # also: cone, radius (blast radius), line
+      limit: once per round
+      effect: On an Evade Major Fail or worse, the target gains the Burning Debuff.
+traits:
+  - bad reflux: Attacks can target the lava pouch in the Llama's throat…
 ```
 
-If you have multiple URLs, you can also do:
+- Each health slot shows the **CON mod**.
+- Stats show as `6 (+3)` using the stat mod table (Table 9).
+- Traits render as `Notes: *Bad Reflux*—…`.
+- Any other property is listed at the bottom, so nothing is silently hidden.
 
-```json
-{
-	"fundingUrl": {
-		"Buy Me a Coffee": "https://buymeacoffee.com",
-		"GitHub Sponsor": "https://github.com/sponsors",
-		"Patreon": "https://www.patreon.com/"
-	}
-}
+## Characters — `carl-character`
+
+The sheet follows the printed character sheet: identity, health bar, stats, Evade and DR formulas, mana, debuffs, external buffs, portrait, attacks, hotlist, gear, skills, inventory, pet, mount, and the remaining panels. Empty sections are hidden.
+
+```yaml
+name: Carl
+race: "[[Human]]"
+class: "[[Compensated Anarchist]]"
+pronouns: he/him
+level: 12
+crawler: 4122
+floor: 3
+portrait: "[[carl.png]]"
+hp-slots: 10               # defaults to 10
+hp-current: 8
+move: 30ft
+step: 5ft
+favor: 2                   # AI favor
+size: medium
+mana-max: 20
+mana-current: 12
+evade-buffs: 0             # added to Evade on top of item bonuses
+dr-buffs: 0                # added to DR on top of item bonuses
+
+# Unenhanced stats, before race/class bonuses
+strength: 8
+intelligence: 5
+constitution: 9
+dexterity: 7
+charisma: 4
+
+gear:
+  head: "[[Hat]]"
+  feet: "[[Enchanted Toe Ring]]"
+  accessories:             # max 10
+    - "[[Sunglasses]]"
+buffs:                     # external buffs; only the first 3 count
+  - "[[Potion of Strength]]"
+debuffs:
+  - Poisoned
+
+attacks:
+  - punch:
+      rank: 3
+      stat: str            # to hit = rank + enhanced STR mod
+      dice: 1d4
+      damage-stat: str     # damage = dice + enhanced STR mod
+      effect: Bludgeoning.
+skills:
+  - pugilism:
+      rank: 5              # trained rank, before race/class ranks
+      stat: str
+      type: Attack
+      notes: Unlocked kick at rank 5
+      checked: true
+hotlist:
+  - "[[Hob-lobber]]"
+inventory:
+  - item: "[[Rope]]"
+    quantity: 1
+    notes: 50ft
+  - Gold: 120
+
+popularity: 150            # running total, starts at 0
+trauma: …
+loose-ends: …
+regrets: …
+notes: …
+
+pet: "[[Mr. Whiskers]]"           # a creature note
+mount: "[[Shopping Cart of Doom]]"
+kills: ["[[Bad Llama]]"]
+clubs: ["[[Desperado Club]]"]
+space-tier: 2
+space-size: Small
+amenities: ["Shower"]
+deity: "[[Grull]]"
+racial-abilities: []       # added after the race note's abilities
+class-abilities: []
+sponsors: ["[[Valtay Corporation]]"]
 ```
 
-## API Documentation
+### How the numbers are worked out
 
-See https://docs.obsidian.md
+| Value | Calculation |
+| --- | --- |
+| Unenhanced stat | listed stat + race and class `bonuses` |
+| Enhanced stat | unenhanced + gear + first 3 external buffs |
+| Stat mod | from the enhanced score, using Table 9 |
+| Health slot value | enhanced CON mod |
+| Evade | d20 + DEX mod + buffs (`evade` bonuses + `evade-buffs`) |
+| DR | armor (gear `dr` bonuses) + buffs (buff/race/class `dr` + `dr-buffs`) |
+| Skill rank | listed rank + race and class `skills` ranks |
+| Attack to hit / damage | `rank` + stat mod / `dice` + `damage-stat` mod |
+
+Hover any score with a coloured or underlined value to see where it came from. Write `to-hit` or `damage` out in full on an attack to skip the calculation.
+
+## Linked notes
+
+Anything in quotes as a link — `"[[Note]]"` — is read from that note's properties. Plain text works too and is simply shown as written.
+
+**Items and buffs** (`carl-item`):
+
+```yaml
+slot: feet
+rarity: uncommon
+description: Somehow smells like feet even when new.
+bonuses:
+  dexterity: 2             # stats by name or abbreviation (dex)
+  evade: 1                 # also: dr
+```
+
+**Races and classes** (`carl-race`, `carl-class`):
+
+```yaml
+size: medium
+bonuses:
+  dexterity: 5
+skills:
+  climbing: 2
+  performance:
+    rank: 2
+    notes: with a stringed instrument specialty
+abilities:
+  - +3 Web Spell, which costs half the normal Mana to cast
+  - You have an innate Climb Move equal to your normal Move value
+```
+
+Rendered like the book: `Size: Medium (4)`, `+5 Dexterity`, `+2 Climbing and Performance (with a stringed instrument specialty) Skills`, then each ability.
+
+**Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities and sponsors** show their note's `description`.
+
+Tagging notes (`carl/creature`, `carl/character`, `carl/item`, `carl/race`, `carl/class`…) makes them easy to collect in a Base.
+
+## Installation
+
+Not yet in the community plugin list. To install manually, download `main.js`, `manifest.json` and `styles.css` from the [latest release](https://github.com/matalina/obsidian-carlrpg/releases) into `<vault>/.obsidian/plugins/dungeon-crawler-carl/`, then enable **Dungeon Crawler Carl** in **Settings → Community plugins**.
+
+## Development
+
+Requires Node 20+.
+
+```bash
+npm install
+cp .env.example .env       # then set DROPBOX_DIR / VAULT_SUBPATH to your vault
+npm test                   # type-check, build, and copy into the vault's plugin folder
+npm run dev                # rebuild on change
+npm run lint
+```
+
+`npm test` copies the build to `<DROPBOX_DIR>/<VAULT_SUBPATH>/.obsidian/plugins/<id>/`; reload the plugin in Obsidian to pick it up.
+
+Source layout:
+
+```
+src/
+  main.ts                 registers the blocks
+  blocks/
+    shared.ts             LiveBlock (properties/YAML + live updates), health bar, attacks
+    creature.ts           carl-creature
+    reference.ts          carl-item, carl-race, carl-class
+    character/            carl-character: model (calculations), top, sections, panels, ui
+  rules/                  stat mods, size table, item links and bonuses, skill bonuses
+```
+
+### Releasing
+
+```bash
+npm version patch          # bumps manifest.json + versions.json and tags (no "v" prefix)
+git push --follow-tags
+```
+
+Pushing the tag builds the plugin and creates a draft GitHub release with the plugin files attached; publish it from the Releases page.
