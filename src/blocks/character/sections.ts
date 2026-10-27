@@ -7,7 +7,6 @@ import { GEAR_SLOTS, MAX_ACCESSORIES, Sheet } from './model';
 import { listEntries, panel, table, text } from './ui';
 
 const STORY_FIELDS: [key: string, label: string][] = [
-	['popularity', 'Popularity'],
 	['trauma', 'Past trauma'],
 	['loose-ends', 'Loose ends'],
 	['regrets', 'Regrets'],
@@ -29,14 +28,22 @@ export function renderGearAndStory(root: HTMLElement, sheet: Sheet, md: RenderMa
 	const row = root.createDiv({ cls: 'carl-two-col' });
 	renderGear(row.createDiv({ cls: 'carl-gear-col' }), sheet, md);
 
-	const story = STORY_FIELDS.map(([key, label]) => [label, text(sheet.data[key])] as const).filter(([, v]) => v);
-	if (!story.length) return;
 	const col = row.createDiv({ cls: 'carl-story-col' });
+	renderPopularity(col, sheet.data.popularity);
+
+	const story = STORY_FIELDS.map(([key, label]) => [label, text(sheet.data[key])] as const).filter(([, v]) => v);
 	for (const [label, value] of story) {
 		const box = col.createDiv({ cls: 'carl-story' });
 		box.createDiv({ cls: 'carl-field-label', text: label });
 		md(value, box.createDiv({ cls: 'carl-field-value' }));
 	}
+}
+
+// Popularity is a running total that starts at 0.
+function renderPopularity(col: HTMLElement, popularity: unknown) {
+	const box = col.createDiv({ cls: 'carl-story carl-popularity' });
+	box.createDiv({ cls: 'carl-field-label', text: 'Popularity' });
+	box.createDiv({ cls: 'carl-field-value', text: String(Number(popularity) || 0) });
 }
 
 function renderGear(col: HTMLElement, sheet: Sheet, md: RenderMarkdown) {

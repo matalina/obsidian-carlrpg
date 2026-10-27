@@ -554,6 +554,13 @@
 	min-height: 2.5em;
 }
 
+.carl-story.carl-popularity .carl-field-value {
+	min-height: 0;
+	font-size: 1.3em;
+	font-weight: var(--font-bold);
+	text-align: center;
+}
+
 /* Pages 5–6: pet, mount, lists, abilities, sponsors */
 
 .carl-panels {
