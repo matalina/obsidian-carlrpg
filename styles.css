@@ -1,0 +1,615 @@
+/* Dungeon Crawler Carl blocks (carl-creature, carl-character, carl-npc) */
+
+.carl-block {
+	--carl-rule: var(--text-normal);
+
+	font-family: var(--font-interface);
+	font-size: var(--font-ui-medium);
+	line-height: 1.35;
+	margin: var(--size-4-2) 0;
+}
+
+.carl-block p {
+	margin: 0;
+}
+
+.carl-name {
+	font-size: 1.3em;
+	font-weight: var(--font-bold);
+}
+
+.carl-subtitle {
+	font-style: italic;
+}
+
+/* Health slots */
+
+.carl-health {
+	display: flex;
+	gap: 2px;
+	margin: var(--size-4-2) 0 var(--size-4-1);
+}
+
+.carl-slot {
+	text-align: center;
+}
+
+.carl-slot-box {
+	width: 2em;
+	padding: 0.1em 0;
+	font-weight: var(--font-bold);
+	color: white;
+	background: linear-gradient(
+		to right,
+		hsl(var(--carl-slot-hue-from) 75% 35%),
+		hsl(var(--carl-slot-hue-to) 75% 35%)
+	);
+}
+
+.carl-slot-box.is-lost {
+	background: var(--background-modifier-border);
+	color: var(--text-faint);
+}
+
+.carl-health.is-wide .carl-slot {
+	flex: 1;
+}
+
+.carl-health.is-wide .carl-slot-box {
+	width: auto;
+}
+
+.carl-slot-pct {
+	font-size: var(--font-ui-smaller);
+	color: var(--text-muted);
+}
+
+/* Level/defense and stat rows */
+
+.carl-grid {
+	display: grid;
+	grid-template-columns: repeat(var(--carl-columns), 1fr);
+	text-align: center;
+	padding: var(--size-4-1) 0;
+	border-top: 1px solid var(--carl-rule);
+}
+
+.carl-summary {
+	border-top-width: 2px;
+}
+
+.carl-stats {
+	border-bottom: 2px solid var(--carl-rule);
+}
+
+.carl-label {
+	font-weight: var(--font-bold);
+}
+
+.carl-stats .carl-label {
+	font-variant: small-caps;
+}
+
+/* Attacks, extras and notes */
+
+.carl-section {
+	padding: var(--size-4-1) 0;
+	border-bottom: 2px solid var(--carl-rule);
+}
+
+/* Each attack gets its own rule instead of one around the whole section */
+.carl-section.carl-attacks {
+	padding: 0;
+	border-bottom: none;
+}
+
+.carl-attack {
+	padding: var(--size-4-1) 0;
+	border-bottom: 2px solid var(--carl-rule);
+}
+
+.carl-notes > div + div {
+	margin-top: var(--size-4-2);
+}
+
+/* Race/class trait list */
+
+.carl-reference .carl-description {
+	margin: var(--size-4-2) 0;
+}
+
+.carl-trait-list {
+	margin: var(--size-4-2) 0 0;
+	padding-left: 1.4em;
+}
+
+.carl-trait-list li + li {
+	margin-top: var(--size-4-1);
+}
+
+/* ── Character sheet ─────────────────────────────────────────── */
+
+.carl-character {
+	--carl-field-bg: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-primary));
+	--carl-box-border: 1px solid var(--carl-rule);
+	--carl-red: #c62828;
+
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.carl-field {
+	display: flex;
+	flex-direction: column;
+	min-width: 3.5em;
+}
+
+.carl-field.is-inline {
+	flex-direction: row;
+	align-items: baseline;
+	gap: var(--size-4-2);
+}
+
+.carl-field.is-inline .carl-field-value {
+	flex: 1;
+	text-align: left;
+}
+
+.carl-field-value {
+	background: var(--carl-field-bg);
+	border-bottom: 1px solid var(--background-modifier-border);
+	min-height: 1.6em;
+	padding: 0.1em 0.4em;
+	text-align: center;
+}
+
+.carl-field-value.is-enhanced {
+	color: var(--text-accent);
+	font-weight: var(--font-bold);
+}
+
+.carl-field-value.is-natural {
+	text-decoration: underline dotted;
+	text-underline-offset: 3px;
+}
+
+.carl-field.is-total .carl-field-value {
+	font-weight: var(--font-bold);
+}
+
+.carl-field-label,
+.carl-subhead,
+.carl-gear-label,
+.carl-pair-label {
+	font-weight: var(--font-bold);
+	font-size: var(--font-ui-small);
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.carl-field .carl-field-label {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.carl-field.is-inline .carl-field-label {
+	text-align: left;
+}
+
+.carl-op {
+	font-weight: var(--font-bold);
+	font-size: 1.2em;
+	align-self: flex-start;
+	padding-top: 0.1em;
+}
+
+.carl-muted {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+}
+
+.carl-center {
+	text-align: center;
+}
+
+.is-ignored {
+	opacity: 0.5;
+	text-decoration: line-through;
+}
+
+/* Page 1 layout */
+
+.carl-sheet-top {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.carl-stat-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: var(--size-4-2);
+}
+
+.carl-stat-box {
+	border: var(--carl-box-border);
+	padding: var(--size-4-1) var(--size-4-2);
+}
+
+.carl-movement {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--size-4-1) var(--size-4-2);
+	align-content: center;
+}
+
+.carl-stat-name {
+	font-weight: var(--font-bold);
+}
+
+.carl-stat-scores {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--size-4-1);
+}
+
+.carl-stat-scores .carl-field {
+	flex: 1;
+	min-width: 0;
+}
+
+.carl-stat-scores .carl-field-label {
+	font-size: var(--font-ui-smaller);
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.carl-slash {
+	font-size: 1.4em;
+	line-height: 1;
+}
+
+.carl-stat-mod {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	border-top: var(--carl-box-border);
+	margin-top: var(--size-4-1);
+	padding-top: var(--size-4-1);
+}
+
+.carl-stat-mod .carl-field-value {
+	flex: 1;
+	font-weight: var(--font-bold);
+}
+
+.carl-identity {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.carl-identity-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-4-2) var(--size-4-3);
+}
+
+.carl-identity-row > .carl-field {
+	flex: 1 1 12em;
+}
+
+.carl-identity-row > .carl-field.carl-wide {
+	flex-grow: 2;
+}
+
+.carl-identity .carl-field-label {
+	white-space: nowrap;
+}
+
+.carl-character .carl-health.is-wide {
+	padding: 4px;
+	margin: 0;
+	background: linear-gradient(to right, hsl(0 70% 45%), hsl(45 80% 45%), hsl(120 55% 38%));
+}
+
+.carl-character .carl-health.is-wide .carl-slot-pct {
+	color: white;
+	font-weight: var(--font-bold);
+}
+
+.carl-sheet-mid {
+	display: grid;
+	grid-template-columns: 1fr 13em;
+	gap: var(--size-4-3);
+}
+
+.carl-defense-col {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	min-width: 0;
+}
+
+.carl-formula {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: var(--size-4-1) var(--size-4-2);
+}
+
+.carl-formula-name {
+	font-weight: var(--font-bold);
+	font-size: 1.15em;
+	text-transform: uppercase;
+	width: 6.5em;
+	line-height: 1.1;
+}
+
+.carl-mana {
+	margin-left: var(--size-4-4);
+}
+
+.carl-mana .carl-field-value {
+	min-width: 6em;
+}
+
+.carl-status {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--size-4-3);
+}
+
+.carl-debuffs .carl-field-value {
+	text-align: left;
+	min-height: 4.5em;
+	margin-top: var(--size-4-1);
+}
+
+.carl-portrait {
+	border: var(--carl-box-border);
+	aspect-ratio: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+}
+
+.carl-portrait img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.carl-placeholder {
+	color: var(--text-faint);
+}
+
+.carl-buff {
+	display: flex;
+	gap: var(--size-4-1);
+	margin-top: var(--size-4-1);
+}
+
+.carl-buff .carl-field-value {
+	flex: 1;
+	text-align: left;
+}
+
+.carl-buff-num {
+	font-weight: var(--font-bold);
+}
+
+/* Panels with black title bars */
+
+.carl-panel {
+	min-width: 0;
+}
+
+.carl-bar {
+	background: var(--text-normal);
+	color: var(--background-primary);
+	font-weight: var(--font-bold);
+	text-transform: uppercase;
+	text-align: center;
+	letter-spacing: 0.04em;
+	padding: 0.1em 0.5em;
+}
+
+.carl-panel.is-red .carl-bar {
+	background: var(--carl-red);
+	color: white;
+}
+
+.carl-panel-body {
+	border: var(--carl-box-border);
+	border-top: none;
+	padding: var(--size-4-1) var(--size-4-2);
+}
+
+.carl-subhead {
+	margin: var(--size-4-1) 0;
+}
+
+.carl-rows .carl-row {
+	border-bottom: 1px solid var(--background-modifier-border);
+	padding: 0.15em 0;
+}
+
+.carl-panel-text {
+	margin-top: var(--size-4-1);
+}
+
+/* Tables */
+
+.carl-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+}
+
+.carl-block .carl-table th,
+.carl-block .carl-table td {
+	border: 1px solid var(--background-modifier-border);
+	padding: 0.2em 0.4em;
+	background: none;
+	vertical-align: top;
+}
+
+.carl-block .carl-table thead th {
+	font-size: var(--font-ui-small);
+	text-transform: uppercase;
+	text-align: center;
+}
+
+.carl-table tbody th {
+	text-align: left;
+	font-weight: var(--font-bold);
+}
+
+.carl-attack-table td:nth-child(2),
+.carl-attack-table td:nth-child(3) {
+	text-align: center;
+	white-space: nowrap;
+}
+
+.carl-total {
+	font-weight: var(--font-bold);
+}
+
+.carl-check {
+	color: var(--color-green);
+	width: 2em;
+}
+
+/* Hotlist */
+
+.carl-hotlist {
+	display: grid;
+	grid-template-columns: repeat(5, 1fr);
+	gap: var(--size-4-2);
+}
+
+.carl-hot {
+	border: var(--carl-box-border);
+	background: var(--carl-field-bg);
+	padding: var(--size-4-1) var(--size-4-2);
+	min-height: 3em;
+}
+
+/* Gear + story */
+
+.carl-two-col {
+	display: grid;
+	grid-template-columns: 2fr 1fr;
+	gap: var(--size-4-3);
+}
+
+.carl-two-col > :only-child {
+	grid-column: 1 / -1;
+}
+
+.carl-gear .carl-subhead {
+	text-align: center;
+}
+
+.carl-gear-slot {
+	display: flex;
+	gap: var(--size-4-2);
+	border: var(--carl-box-border);
+	border-bottom: none;
+	padding: 0.15em var(--size-4-2);
+}
+
+.carl-gear-slot:last-child {
+	border-bottom: var(--carl-box-border);
+}
+
+.carl-gear-label {
+	width: 9em;
+	flex-shrink: 0;
+}
+
+.carl-gear-items {
+	flex: 1;
+	background: var(--carl-field-bg);
+	min-height: 1.5em;
+	padding: 0 0.4em;
+}
+
+.carl-story-col {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.carl-story {
+	border: var(--carl-box-border);
+	padding: var(--size-4-1) var(--size-4-2);
+}
+
+.carl-story .carl-field-value {
+	text-align: left;
+	min-height: 2.5em;
+}
+
+/* Pages 5–6: pet, mount, lists, abilities, sponsors */
+
+.carl-panels {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(17em, 1fr));
+	gap: var(--size-4-3);
+	align-items: start;
+}
+
+.carl-companion-name {
+	margin-bottom: var(--size-4-1);
+}
+
+.carl-companion-stats {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: var(--size-4-3);
+	margin: var(--size-4-2) 0;
+}
+
+.carl-pair {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+	margin-bottom: 2px;
+}
+
+.carl-pair-label {
+	flex: 1;
+	text-align: right;
+}
+
+.carl-pair .carl-field-value {
+	min-width: 4em;
+}
+
+.carl-panels .carl-section {
+	border-bottom-width: 1px;
+}
+
+/* Narrow panes: stack the columns */
+
+@media (max-width: 700px) {
+	.carl-sheet-mid,
+	.carl-two-col,
+	.carl-stat-grid,
+	.carl-status {
+		grid-template-columns: 1fr;
+	}
+
+	.carl-hotlist {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.carl-error {
+	color: var(--text-error);
+	font-family: var(--font-monospace);
+}
