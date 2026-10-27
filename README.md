@@ -17,7 +17,7 @@ Write a creature, crawler, item, race or class as properties (or YAML) and the p
 | `carl-class` | A class entry, same layout as races. |
 | `carl-skill` / `carl-spell` | A skill or spell entry like the book's, with upgrades. |
 | `carl-actions` | A play panel for a party and their opponents: rolls, health, mana, debuffs, hotlist. |
-| `carl-mount` | A mount or vehicle, as it appears on the crawler's sheet. |
+| `carl-mount` | A mount or vehicle statblock, like `carl-creature`: "Vehicle; Large (5)", health slots worth the size value (or the CON mod for a living mount), Occupants / Move / DR, any stats and attacks, then accessories. The crawler's sheet shows the same mount in its Mount panel. |
 | `carl-sponsor` | A sponsor: name, description and the crawlers it sponsors. |
 
 ### Two ways to feed a block

@@ -243,7 +243,8 @@ upgrades:
 		label: 'mount or vehicle',
 		file: 'mount.md',
 		folder: 'mounts',
-		content: card('mount', `hp-slots: 10
+		content: card('mount', `type: vehicle
+hp-slots:
 hp-current:
 size:
 occupants:

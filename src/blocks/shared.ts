@@ -151,7 +151,8 @@ export function renderHealth(
 		const slot = bar.createDiv({ cls: 'carl-slot' });
 		const box = slot.createDiv({
 			cls: i < remaining ? 'carl-slot-box' : 'carl-slot-box is-lost',
-			text: conMod == null ? '' : String(conMod),
+			// A non-breaking space keeps an empty slot as tall as a numbered one.
+			text: conMod == null ? ' ' : String(conMod),
 		});
 		box.setCssProps({
 			'--carl-slot-hue-from': String((120 * i) / total),
