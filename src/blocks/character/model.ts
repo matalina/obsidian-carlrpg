@@ -1,6 +1,16 @@
 import { App } from 'obsidian';
-import { Item, Linked, linkedName, parseLinks, readBonuses, resolveItem, resolveValue } from '../../rules/items';
+import { Item, Linked, linkedName, parseLink, parseLinks, readBonuses, resolveItem, resolveLink, resolveValue } from '../../rules/items';
 import { collectStats, STATS, statKey, statMod } from '../../rules/stats';
+import {
+	addBaseDice,
+	checkLabel,
+	passiveApplies,
+	passiveEffect,
+	PassiveEffect,
+	readSkillInfo,
+	SkillInfo,
+	skillDamage,
+} from '../../rules/skillnotes';
 import { readSkillBonuses, skillKey } from '../../rules/skills';
 import { sponsoredCrawlers } from '../../rules/sponsors';
 import { asText, isRecord, titleCase, toEntries, toRecord } from '../yaml';
@@ -30,7 +40,10 @@ export interface SponsorEntry {
 }
 
 export interface SkillLine {
+	/** Plain name, e.g. "Dagger". */
 	name: string;
+	/** A link to the skill's note when it has one, else the name. */
+	markdown: string;
 	rank: number | null;
 	/** How the rank was reached, for its tooltip (only when race/class add to it). */
 	rankSources: string[];
@@ -38,6 +51,11 @@ export interface SkillLine {
 	type: string;
 	notes: string;
 	checked: boolean;
+	/** The skill's own note, if there is one. */
+	note: Linked | null;
+	info: SkillInfo | null;
+	/** From the `spells` list. */
+	spell: boolean;
 }
 
 export interface StatLine {
@@ -66,8 +84,12 @@ export interface Sheet {
 	sponsors: SponsorEntry[];
 	/** Skills the character lists, with race/class ranks added, plus skills only race/class grant. */
 	skills: SkillLine[];
+	/** Spells, built the same way from `spells`. */
+	spells: SkillLine[];
 	/** Every linked note, so the block can re-render when one changes. */
 	linked: Linked[];
+	/** Enhanced modifier by stat key, for formulas like "1d4 + STR". */
+	statMods: Record<string, number>;
 	/** Enhanced modifier for a stat key ("str") or name ("strength"). */
 	mod: (stat: string) => number;
 	evade: { dex: number; buffs: number; total: number };
@@ -90,6 +112,9 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 	const deity = linked(data.deity);
 	const sponsors = (Array.isArray(data.sponsors) ? data.sponsors : data.sponsors == null ? [] : [data.sponsors])
 		.flatMap((s) => linked(s) ?? []);
+	const grants = [race, cls].flatMap((l) => l ?? []);
+	const skills = skillLines(app, sourcePath, data, grants, 'skills');
+	const spells = skillLines(app, sourcePath, data, grants, 'spells');
 	const sponsorEntries = sponsors.map((sponsor) => ({
 		sponsor,
 		crawlers: sponsoredCrawlers(app, sponsor.file, sponsor.props),
@@ -123,8 +148,15 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 		mount,
 		deity,
 		sponsors: sponsorEntries,
-		skills: skillLines(data, [race, cls].flatMap((l) => l ?? [])),
-		linked: [...gearItems, ...buffs, ...[race, cls, pet, mount, deity, ...sponsors].flatMap((l) => l ?? [])],
+		skills,
+		spells,
+		linked: [
+			...gearItems,
+			...buffs,
+			...[race, cls, pet, mount, deity, ...sponsors].flatMap((l) => l ?? []),
+			...[...skills, ...spells].flatMap((s) => s.note ?? []),
+		],
+		statMods: Object.fromEntries(stats.map((s) => [s.key, statMod(s.enhanced)])),
 		mod,
 		evade: { dex: mod('dex'), buffs: evadeBuffs, total: mod('dex') + evadeBuffs },
 		dr: { armor, buffs: drBuffs, total: armor + drBuffs },
@@ -174,14 +206,33 @@ function applyBonuses(start: number, key: string, sources: BonusSource[], log: s
 }
 
 // The character's own `rank` is what they trained; race and class ranks are added on top.
-function skillLines(data: Record<string, unknown>, grants: Linked[]): SkillLine[] {
-	const lines: SkillLine[] = toEntries(data.skills).map(([name, details]) => {
+// `key` is "skills" or "spells": spells are skills with their own list, granted and ranked the same way.
+function skillLines(
+	app: App,
+	sourcePath: string,
+	data: Record<string, unknown>,
+	grants: Linked[],
+	key: 'skills' | 'spells',
+): SkillLine[] {
+	const blank = (name: string): SkillLine => ({
+		name,
+		markdown: name,
+		rank: null,
+		rankSources: [],
+		stat: '',
+		type: '',
+		notes: '',
+		checked: false,
+		note: null,
+		info: null,
+		spell: key === 'spells',
+	});
+	const parsed: SkillLine[] = toEntries(data[key]).map(([name, details]) => {
 		const f = isRecord(details) || Array.isArray(details) ? toRecord(details) : { rank: details };
 		const rank = f.rank == null || f.rank === '' ? null : Number(f.rank);
 		return {
-			name,
+			...blank(name),
 			rank: Number.isFinite(rank) ? rank : null,
-			rankSources: [],
 			stat: asText(f.stat),
 			type: asText(f.type),
 			notes: asText(f.notes),
@@ -189,11 +240,27 @@ function skillLines(data: Record<string, unknown>, grants: Linked[]): SkillLine[
 		};
 	});
 
+	// One line per skill: a link and a plain name for the same skill are merged.
+	const lines: SkillLine[] = [];
+	for (const line of parsed) {
+		const same = lines.find((l) => skillKey(skillName(l.name)) === skillKey(skillName(line.name)));
+		if (!same) {
+			lines.push(line);
+			continue;
+		}
+		if (/^\[\[/.test(line.name) && !/^\[\[/.test(same.name)) same.name = line.name;
+		same.rank ??= line.rank;
+		same.stat ||= line.stat;
+		same.type ||= line.type;
+		same.notes ||= line.notes;
+		same.checked ||= line.checked;
+	}
+
 	for (const grant of grants) {
-		for (const bonus of readSkillBonuses(grant.props)) {
-			let line = lines.find((l) => skillKey(l.name) === skillKey(bonus.name));
+		for (const bonus of readSkillBonuses(grant.props, key)) {
+			let line = lines.find((l) => skillKey(skillName(l.name)) === skillKey(skillName(bonus.name)));
 			if (!line) {
-				line = { name: titleCase(bonus.name), rank: null, rankSources: [], stat: '', type: '', notes: '', checked: false };
+				line = blank(titleCase(skillName(bonus.name)));
 				lines.push(line);
 			}
 			if (!line.rankSources.length) line.rankSources.push(`${line.rank ?? 0} trained`);
@@ -202,5 +269,154 @@ function skillLines(data: Record<string, unknown>, grants: Linked[]): SkillLine[
 			if (bonus.notes) line.notes = [line.notes, bonus.notes].filter(Boolean).join('; ');
 		}
 	}
+
+	// A skill with its own note (matched by link or by name) takes its stat and check type from there,
+	// unless the character's entry sets them.
+	for (const line of lines) {
+		const link = parseLink(line.name);
+		if (!link) continue;
+		const note = resolveLink(app, link, sourcePath);
+		line.name = titleCase(skillName(line.name));
+		if (!note.file) continue;
+		line.note = note;
+		line.info = readSkillInfo(note.props);
+		line.markdown = `[[${link.text}]]`;
+		line.stat ||= line.info.stat;
+		line.type ||= checkLabel(line.info);
+	}
 	return lines;
+}
+
+// "[[Dagger|Knife]]" → "Dagger"; plain names unchanged.
+function skillName(name: string): string {
+	return parseLink(name)?.target ?? name;
+}
+
+export interface AttackSkill {
+	line: SkillLine;
+	rank: number;
+	stat: string;
+	statMod: number;
+	/** Damage formula with upgrades applied, e.g. "1d4 + 1d4 + STR Piercing". */
+	damage: string;
+}
+
+// Skills and spells whose note says `check: attack` — they appear with the sheet's attacks, rolled against Evade.
+export function attackSkills(sheet: Sheet): AttackSkill[] {
+	return [...sheet.skills, ...sheet.spells].flatMap((line) => {
+		if (line.info?.kind !== 'attack') return [];
+		const rank = line.rank ?? 0;
+		return [{ line, rank, stat: line.stat, statMod: line.stat ? sheet.mod(line.stat) : 0, damage: skillDamage(line.info, rank) }];
+	});
+}
+
+/** "1d4 + STR Piercing" → "1d4 + 4 Piercing" for display. */
+export function withStatMods(formula: string, statMods: Record<string, number>): string {
+	return formula.replace(/\b(STR|INT|CON|DEX|CHA)\b/g, (m) => String(statMods[m.toLowerCase()] ?? 0));
+}
+
+/** A passive attached to an attack, with what it adds at its rank. */
+export interface AppliedPassive {
+	line: SkillLine;
+	effect: PassiveEffect;
+}
+
+/**
+ * Everything needed to show or roll one crawler attack: an entry in `attacks` (rank + stat to hit,
+ * dice + damage-stat), or an attack skill or spell. Always-on passives that apply (Iron Punch on
+ * Pugilism) are already folded in; optional ones (Aiming) are listed for the player to choose.
+ */
+export interface AttackPlan {
+	name: string;
+	markdown: string;
+	/** The skill or spell behind it, if any. */
+	line: SkillLine | null;
+	/** To-hit modifiers, e.g. [["rank", 5], ["Str", 4], ["Iron Punch", 0]]. */
+	parts: [label: string, value: number][];
+	/** Base damage formula (crit doubles its dice), e.g. "1d4 + 1d2 + STR Bludgeoning". */
+	damage: string;
+	/** Bonus damage dice added on a hit, not doubled. */
+	bonusDice: string[];
+	disadvantage: boolean;
+	applied: AppliedPassive[];
+	optional: AppliedPassive[];
+	/** Written-out `to-hit` for an attack without rank/stat. */
+	toHitText: string;
+	limit: string;
+	effect: string;
+	area: Record<string, unknown>;
+}
+
+export function attackPlans(sheet: Sheet): AttackPlan[] {
+	const entries = toEntries(sheet.data.attacks);
+	const plans: AttackPlan[] = [];
+
+	for (const [name, details] of entries) {
+		const f = toRecord(details);
+		const rank = Number(f.rank) || 0;
+		const stat = asText(f.stat);
+		const damageMod = f['damage-stat'] == null ? '' : ` + ${statKey(asText(f['damage-stat'])).toUpperCase()}`;
+		const damage = f.damage != null ? asText(f.damage) : f.dice != null ? `${asText(f.dice)}${damageMod}` : '';
+		plans.push(
+			withPassives(sheet, {
+				name: titleCase(name),
+				markdown: titleCase(name),
+				line: null,
+				parts: f.rank == null && f.stat == null ? [] : [['rank', rank], ...(stat ? [[titleCase(statKey(stat)), sheet.mod(stat)] as [string, number]] : [])],
+				damage,
+				bonusDice: [],
+				disadvantage: false,
+				applied: [],
+				optional: [],
+				toHitText: f['to-hit'] == null ? '' : asText(f['to-hit']),
+				limit: asText(f.limit),
+				effect: asText(f.effect),
+				area: f,
+			}, asText(f.attack)),
+		);
+	}
+
+	for (const { line, rank, stat, statMod: mod, damage } of attackSkills(sheet)) {
+		if (entries.some(([n]) => n.toLowerCase() === line.name.toLowerCase())) continue;
+		plans.push(
+			withPassives(sheet, {
+				name: line.name,
+				markdown: line.markdown,
+				line,
+				parts: [['rank', rank], ...(stat ? [[titleCase(statKey(stat)), mod] as [string, number]] : [])],
+				damage,
+				bonusDice: [],
+				disadvantage: false,
+				applied: [],
+				optional: [],
+				toHitText: '',
+				limit: '',
+				effect: '',
+				area: {},
+			}, line.info?.attackType ?? ''),
+		);
+	}
+	return plans;
+}
+
+function withPassives(sheet: Sheet, plan: AttackPlan, attackType: string): AttackPlan {
+	for (const line of sheet.skills) {
+		if (line.info?.kind !== 'passive' || !passiveApplies(line.info, plan.name, attackType)) continue;
+		const applied = { line, effect: passiveEffect(line.info, line.rank ?? 0) };
+		if (line.info.optional) plan.optional.push(applied);
+		else applyPassive(plan, applied);
+	}
+	return plan;
+}
+
+/** Folds a passive into an attack: its rank to hit, its base and bonus dice, its Disadvantage. */
+export function applyPassive(plan: AttackPlan, passive: AppliedPassive): AttackPlan {
+	const { effect, line } = passive;
+	return Object.assign(plan, {
+		parts: effect.toHit ? [...plan.parts, [line.name, effect.toHit]] : plan.parts,
+		damage: plan.damage ? addBaseDice(plan.damage, effect.baseDice) : effect.baseDice.join(' + '),
+		bonusDice: [...plan.bonusDice, ...effect.bonusDice],
+		disadvantage: plan.disadvantage || effect.disadvantage,
+		applied: [...plan.applied, passive],
+	});
 }

@@ -705,3 +705,234 @@
 .callout[data-callout="loot"][data-callout-metadata~="platinum"] { --callout-color: 90, 170, 190; }
 .callout[data-callout="loot"][data-callout-metadata~="legendary"] { --callout-color: 220, 90, 20; }
 .callout[data-callout="loot"][data-callout-metadata~="celestial"] { --callout-color: 120, 90, 230; }
+
+/* ── Actions widget (carl-actions) ─────────────────────────────── */
+
+.carl-actions {
+	--carl-field-bg: color-mix(in srgb, var(--interactive-accent) 8%, var(--background-primary));
+
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-m);
+	padding: var(--size-4-2) var(--size-4-3);
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+}
+
+.carl-actions-header {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-3);
+	flex-wrap: wrap;
+}
+
+.carl-target {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-1);
+}
+
+.carl-target input {
+	width: 5em;
+}
+
+.carl-roll-notice {
+	max-width: 28em;
+}
+
+.carl-roll-notice-who {
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-bold);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	opacity: 0.8;
+}
+
+.carl-roll-notice-text {
+	font-family: var(--font-monospace);
+	font-size: 0.95em;
+}
+
+.carl-roll-notice-text p {
+	margin: 0;
+}
+
+/* Notices are dark in both themes; the theme's bold colour can vanish against them. */
+.carl-roll-notice,
+.carl-roll-notice-text :is(strong, b, em, a) {
+	color: inherit;
+}
+
+.carl-roll-notice-text :is(strong, b) {
+	font-weight: var(--font-extrabold);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.carl-actions-section {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-1);
+}
+
+.carl-actions .carl-health {
+	margin: 0;
+}
+
+.carl-clickable .carl-slot-box {
+	cursor: pointer;
+}
+
+.carl-clickable .carl-slot-box:hover {
+	outline: 2px solid var(--text-normal);
+}
+
+.carl-buttons,
+.carl-chips,
+.carl-stepper,
+.carl-add,
+.carl-hotlist-actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-1) var(--size-4-2);
+}
+
+.carl-attack-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-2);
+	padding: 2px 0;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.carl-attack-row > .carl-total {
+	min-width: 9em;
+}
+
+.carl-chip,
+.carl-hot-action {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	background: var(--carl-field-bg);
+	border-radius: var(--radius-s);
+	padding: 0 0 0 var(--size-4-2);
+}
+
+.carl-chip p,
+.carl-hot-action p {
+	margin: 0;
+	display: inline;
+}
+
+.carl-actions button.carl-chip-remove {
+	padding: 0 var(--size-4-2);
+	box-shadow: none;
+	background: none;
+}
+
+.carl-add input {
+	flex: 1;
+	min-width: 10em;
+}
+
+/* Skill card (carl-skill) */
+
+.carl-skill-body {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	margin-top: var(--size-4-2);
+	padding-left: var(--size-4-3);
+}
+
+.carl-skill-upgrades {
+	font-weight: var(--font-bold);
+	text-transform: uppercase;
+	color: var(--text-accent);
+	margin-top: var(--size-4-1);
+}
+
+.carl-skill-quote {
+	font-style: italic;
+	font-size: 1.05em;
+}
+
+.carl-toggle {
+	display: inline-flex;
+	align-items: center;
+	gap: var(--size-4-1);
+	font-size: var(--font-ui-small);
+	cursor: pointer;
+}
+
+.carl-actions-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(20em, 1fr));
+	gap: var(--size-4-3);
+	align-items: start;
+}
+
+.carl-opponents {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	min-width: 0;
+}
+
+.carl-actions-panel {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	padding: var(--size-4-2);
+	min-width: 0;
+}
+
+.carl-actions-panel.is-target {
+	border-color: var(--color-red);
+	box-shadow: 0 0 0 1px var(--color-red);
+}
+
+.carl-opponent-head {
+	display: flex;
+	align-items: center;
+	gap: var(--size-4-2);
+}
+
+.carl-opponent-head .carl-name {
+	flex: 1;
+}
+
+.carl-target-badge {
+	background: var(--color-red);
+	color: white;
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-bold);
+	text-transform: uppercase;
+	border-radius: var(--radius-s);
+	padding: 0 var(--size-4-2);
+}
+
+.carl-party {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+	min-width: 0;
+}
+
+.carl-target-picker {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--size-4-1) var(--size-4-2);
+}
+
+.carl-actions button.is-active {
+	background: var(--color-red);
+	color: white;
+}

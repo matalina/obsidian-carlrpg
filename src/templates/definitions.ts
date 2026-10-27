@@ -1,4 +1,5 @@
 // Note templates for every block. Properties match what the blocks read, left empty to fill in.
+// Skill `check`: passive | opposed | unopposed | stat | attack (attack: melee | ranged).
 // `{{title}}` is replaced with the note name (the same placeholder Obsidian's Templates plugin uses).
 
 export interface NoteTemplate {
@@ -189,6 +190,53 @@ bonuses:
 skills:
   skill name:
 abilities: []`, 'carl-class'),
+	},
+	{
+		id: 'skill',
+		label: 'skill',
+		file: 'skill.md',
+		folder: 'skills',
+		content: card('skill', `keywords:
+check: unopposed
+stat:
+opposed-by:
+attack:
+applies-to:
+optional: false
+add-rank: false
+disadvantage: false
+ai-favor:
+base-damage:
+damage:
+limitations:
+description:
+upgrades:
+  5:
+  10:
+  15:`, 'carl-skill'),
+	},
+	{
+		id: 'spell',
+		label: 'spell',
+		file: 'spell.md',
+		folder: 'spells',
+		content: card('spell', `quote:
+keywords:
+check: attack
+stat:
+opposed-by:
+mana-cost:
+range:
+duration:
+cooldown:
+base-damage:
+heal:
+limitations:
+description:
+upgrades:
+  5:
+  10:
+  15:`, 'carl-spell'),
 	},
 	{
 		id: 'mount',
