@@ -58,8 +58,8 @@ function renderStatGrid(grid: HTMLElement, sheet: Sheet) {
 function renderMovement(grid: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 	const d = sheet.data;
 	const box = grid.createDiv({ cls: 'carl-stat-box carl-movement' });
-	field(box, 'Move', asText(d.move), md);
-	field(box, 'Step', asText(d.step), md);
+	field(box, 'Move', sheet.move, md);
+	field(box, 'Step', sheet.step, md);
 	field(box, 'AI favor', asText(d.favor), md);
 	field(box, 'Size', formatSize(d.size), md);
 }

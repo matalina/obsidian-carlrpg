@@ -13,6 +13,7 @@ import {
 } from '../../rules/skillnotes';
 import { readSkillBonuses, skillKey } from '../../rules/skills';
 import { sponsoredCrawlers } from '../../rules/sponsors';
+import { readStatPools, splitStatPoints, StatPool } from '../../rules/statpoints';
 import { asText, isRecord, titleCase, toEntries, toRecord } from '../yaml';
 
 export const GEAR_SLOTS: [key: string, label: string][] = [
@@ -94,6 +95,16 @@ export interface Sheet {
 	mod: (stat: string) => number;
 	evade: { dex: number; buffs: number; total: number };
 	dr: { armor: number; buffs: number; total: number };
+	/** Listed Move and Step with race/class `move`/`step` bonuses added. */
+	move: string;
+	step: string;
+	/** Race/class stat points the crawler hasn't split yet (`race-stats` / `class-stats`). */
+	unspentStatPoints: { race: UnspentPoints[]; class: UnspentPoints[] };
+}
+
+export interface UnspentPoints {
+	pool: StatPool;
+	points: number;
 }
 
 export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: string): Sheet {
@@ -121,7 +132,15 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 	}));
 
 	// Race and class bonuses are part of the unenhanced score; gear and external buffs enhance it.
-	const natural = [race, cls].flatMap((l) => (l ? [source(l)] : []));
+	// A race or class can also offer stat points the crawler splits (`stat-points` → `race-stats` / `class-stats`).
+	const raceSplit = race ? splitStatPoints(readStatPools(race.props), data['race-stats']) : null;
+	const classSplit = cls ? splitStatPoints(readStatPools(cls.props), data['class-stats']) : null;
+	const natural = [
+		...(race ? [source(race)] : []),
+		...(raceSplit?.bonuses.size ? [{ name: `${linkedName(race!)} (split)`, bonuses: raceSplit.bonuses }] : []),
+		...(cls ? [source(cls)] : []),
+		...(classSplit?.bonuses.size ? [{ name: `${linkedName(cls!)} (split)`, bonuses: classSplit.bonuses }] : []),
+	];
 	const enhancements = [...gearItems, ...activeBuffs].map(source);
 	const stats = statLines(data, natural, enhancements);
 	const mod = (stat: string) => {
@@ -160,7 +179,18 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 		mod,
 		evade: { dex: mod('dex'), buffs: evadeBuffs, total: mod('dex') + evadeBuffs },
 		dr: { armor, buffs: drBuffs, total: armor + drBuffs },
+		move: addToMeasure(asText(data.move), total(natural, 'move')),
+		step: addToMeasure(asText(data.step), total(natural, 'step')),
+		unspentStatPoints: { race: raceSplit?.unspent ?? [], class: classSplit?.unspent ?? [] },
 	};
+}
+
+// "30ft" + 5 → "35ft"; text without a leading number is left alone.
+function addToMeasure(listed: string, bonus: number): string {
+	if (!bonus) return listed;
+	const match = /^\s*(-?\d+)(.*)$/.exec(listed);
+	if (match) return `${Number(match[1]) + bonus}${match[2]}`;
+	return listed ? listed : `+${bonus}`;
 }
 
 function num(value: unknown): number {

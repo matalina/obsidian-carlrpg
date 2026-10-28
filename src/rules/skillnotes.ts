@@ -6,11 +6,14 @@ import { STATS, statKey } from './stats';
 //   check: passive | opposed | unopposed | stat | attack
 //   stat: int
 //   opposed-by: int          # opposed only — the antagonist's stat; defaults to `stat`
-//   attack: melee | ranged   # attack only
+//   attack: melee | ranged   # attack only; `stat` defaults to STR for melee, DEX for ranged
+//   range: 30 feet           # attack only; melee (5 feet) when not set
 //   ai-favor: 1
-//   base-damage: 1d4 + STR Piercing
 //   limitations: …
+//   cooldown: 1 round
 //   description: …
+//   base-damage: 1d4 + STR Piercing
+//   effects: …               # anything besides damage
 //   upgrades: { 5: "+1d4 base damage, …", 10: …, 15: … }
 //
 // Spells are skills with a few more properties:
@@ -49,6 +52,8 @@ export interface SkillInfo {
 	baseDamage: string;
 	limitations: string;
 	description: string;
+	/** Effects besides damage. */
+	effects: string;
 	upgrades: [rank: number, text: string][];
 	quote: string;
 	keywords: string;
@@ -68,16 +73,18 @@ export interface SkillInfo {
 
 export function readSkillInfo(props: Record<string, unknown>): SkillInfo {
 	const kind = asText(props.check).trim().toLowerCase() as CheckKind;
-	const stat = props.stat == null ? '' : statKey(asText(props.stat));
+	const attackType = asText(props.attack).toLowerCase();
+	const stat = props.stat == null || props.stat === '' ? defaultAttackStat(kind, attackType) : statKey(asText(props.stat));
 	return {
 		kind: KINDS.includes(kind) ? kind : null,
 		stat,
 		opposedBy: props['opposed-by'] == null ? stat : statKey(asText(props['opposed-by'])),
-		attackType: asText(props.attack).toLowerCase(),
+		attackType,
 		aiFavor: asText(props['ai-favor']),
 		baseDamage: asText(props['base-damage']),
 		limitations: asText(props.limitations),
 		description: asText(props.description),
+		effects: asText(props.effects ?? props.effect),
 		upgrades: readUpgrades(props.upgrades),
 		quote: asText(props.quote),
 		keywords: asText(props.keywords),
@@ -94,6 +101,12 @@ export function readSkillInfo(props: Record<string, unknown>): SkillInfo {
 		disadvantage: props.disadvantage === true,
 		bonusDamage: asText(props.damage),
 	};
+}
+
+// The book's default to-hit stat: STR for melee attacks, DEX for ranged.
+function defaultAttackStat(kind: string, attackType: string): string {
+	if (kind !== 'attack') return '';
+	return attackType === 'ranged' ? 'dex' : attackType === 'melee' ? 'str' : '';
 }
 
 // "[[Pugilism|Punching]]" → "Pugilism"; an unquoted [[Pugilism]] arrives as nested lists.

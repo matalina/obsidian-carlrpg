@@ -3,7 +3,8 @@ import { isMissing, Linked, linkMarkdown } from '../../rules/items';
 import { collectStats, formatMod, statMod } from '../../rules/stats';
 import { readPair, RenderMarkdown, renderAttacks, renderHealth, renderNotes } from '../shared';
 import { asText, titleCase } from '../yaml';
-import { Sheet } from './model';
+import { describeStatPool } from '../../rules/statpoints';
+import { Sheet, UnspentPoints } from './model';
 import { panel, rows, text } from './ui';
 
 // Pages 5–6 of the sheet, as cards that flow into columns: pet, mount, kills, clubs,
@@ -18,8 +19,18 @@ export function renderPanels(root: HTMLElement, sheet: Sheet, md: RenderMarkdown
 	listPanel(grid, 'Clubs, societies, guilds, etc', d.clubs, md);
 	renderPersonalSpace(grid, d, md);
 	if (sheet.deity) renderLinkedText(panel(grid, 'Deity'), sheet.deity, md);
-	listPanel(grid, 'Racial abilities', [...asList(sheet.race?.props.abilities), ...asList(d['racial-abilities'])], md);
-	listPanel(grid, 'Class abilities', [...asList(sheet.class?.props.abilities), ...asList(d['class-abilities'])], md);
+	const unspent = (list: UnspentPoints[], key: string) =>
+		list.map(({ pool, points }) => `*${describeStatPool({ ...pool, points })} — not split yet (set \`${key}\`)*`);
+	listPanel(grid, 'Racial abilities', [
+		...unspent(sheet.unspentStatPoints.race, 'race-stats'),
+		...asList(sheet.race?.props.abilities),
+		...asList(d['racial-abilities']),
+	], md);
+	listPanel(grid, 'Class abilities', [
+		...unspent(sheet.unspentStatPoints.class, 'class-stats'),
+		...asList(sheet.class?.props.abilities),
+		...asList(d['class-abilities']),
+	], md);
 	for (const { sponsor, crawlers } of sheet.sponsors) {
 		const body = panel(grid, 'Sponsor');
 		renderLinkedText(body, sponsor, md);

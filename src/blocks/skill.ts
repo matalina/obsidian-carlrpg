@@ -29,15 +29,20 @@ class SkillBlock extends LiveBlock {
 		if (subtitle) header.createDiv({ cls: 'carl-subtitle', text: subtitle });
 
 		const body = block.createDiv({ cls: 'carl-skill-body' });
-		if (info.manaCost != null) md(`**Mana Cost:** ${info.manaCost}`, body.createDiv());
-		if (info.range) md(`**Range:** ${info.range}`, body.createDiv());
-		if (info.duration) md(`**Duration:** ${info.duration}`, body.createDiv());
-		if (info.aiFavor) md(`**AI Favor:** ${info.aiFavor}`, body.createDiv());
-		if (info.baseDamage) md(`**Base Damage:** ${info.baseDamage}`, body.createDiv());
-		if (info.limitations) md(`**Limitations:** ${info.limitations}`, body.createDiv());
-		if (info.cooldown) md(`**Cooldown:** ${info.cooldown}`, body.createDiv());
-		if (info.heal) md(`**Heals:** ${info.heal} Health Bar slots`, body.createDiv());
+		const line = (label: string, text: string) => {
+			if (text) md(`**${label}:** ${text}`, body.createDiv());
+		};
+		// The book's entry order: the facts, then the description, Base Damage and Effects.
+		if (info.manaCost != null) line('Mana Cost', String(info.manaCost));
+		line('Range', info.range);
+		line('Duration', info.duration);
+		line('AI Favor', info.aiFavor);
+		line('Limitations', info.limitations);
+		line('Cooldown', info.cooldown);
+		if (info.heal) line('Heals', `${info.heal} Health Bar slots`);
 		if (info.description) md(info.description, body.createDiv());
+		line('Base Damage', info.baseDamage);
+		line('Effects', info.effects);
 		const check = checkLabel(info);
 		if (check && info.kind !== 'passive') body.createDiv({ cls: 'carl-muted', text: `Check: ${check}` });
 
