@@ -145,6 +145,8 @@ space-tier:
 space-size:
 amenities: []
 deity:
+race-stats: {}
+class-stats: {}
 racial-abilities: []
 class-abilities: []
 sponsors: []
@@ -171,10 +173,14 @@ abilities: []`, 'carl-item'),
 		label: 'race',
 		file: 'race.md',
 		folder: 'races',
-		content: card('race', `size:
+		content: card('race', `earth: false
+size:
 description:
 bonuses:
   strength:
+stat-points:
+  points:
+  stats: []
 skills:
   skill name:
 abilities: []`, 'carl-race'),
@@ -184,9 +190,14 @@ abilities: []`, 'carl-race'),
 		label: 'class',
 		file: 'class.md',
 		folder: 'classes',
-		content: card('class', `description:
+		content: card('class', `earth: false
+class-type:
+description:
 bonuses:
   strength:
+stat-points:
+  points:
+  stats: []
 skills:
   skill name:
 abilities: []`, 'carl-class'),
@@ -196,20 +207,24 @@ abilities: []`, 'carl-class'),
 		label: 'skill',
 		file: 'skill.md',
 		folder: 'skills',
-		content: card('skill', `keywords:
+		content: card('skill', `quote:
+keywords:
 check: unopposed
 stat:
 opposed-by:
 attack:
+range:
 applies-to:
 optional: false
 add-rank: false
 disadvantage: false
 ai-favor:
+limitations:
+cooldown:
+description:
 base-damage:
 damage:
-limitations:
-description:
+effects:
 upgrades:
   5:
   10:
@@ -228,11 +243,13 @@ opposed-by:
 mana-cost:
 range:
 duration:
-cooldown:
-base-damage:
-heal:
+ai-favor:
 limitations:
+cooldown:
+heal:
 description:
+base-damage:
+effects:
 upgrades:
   5:
   10:

@@ -114,6 +114,14 @@
 
 /* Race/class trait list */
 
+.carl-reference .carl-class-type {
+	margin-top: var(--size-4-2);
+}
+
+.carl-reference .carl-class-type p {
+	margin: 0;
+}
+
 .carl-reference .carl-description {
 	margin: var(--size-4-2) 0;
 }

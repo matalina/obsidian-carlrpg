@@ -201,9 +201,14 @@ bonuses:
 **Races and classes** (`carl-race`, `carl-class`):
 
 ```yaml
+earth: true                     # an Earth race or class: a 🌎 after the name
+class-type: Mage, Necromancer   # classes only: the "Class Type:" line
 size: medium
 bonuses:
-  dexterity: 5
+  dexterity: 5             # also: evade, dr, move, step — negative for detriments
+stat-points:               # points the crawler splits between these stats
+  points: 3
+  stats: [str, dex, con]
 skills:
   climbing: 2
   performance:
@@ -214,7 +219,16 @@ abilities:
   - You have an innate Climb Move equal to your normal Move value
 ```
 
-Rendered like the book: `Size: Medium (4)`, `+5 Dexterity`, `+2 Climbing and Performance (with a stringed instrument specialty) Skills`, then each ability.
+Rendered like the book: `Class Type: Mage, Necromancer`, the description, `Size: Medium (4)`, `+5 Dexterity` (bonuses of the same amount share a line: `+2 Intelligence and Dexterity`, `−2 Constitution and Charisma`), `+3 points split between Strength, Dexterity, or Constitution`, `+2 Climbing and Performance (with a stringed instrument specialty) Skills`, then each ability.
+
+The crawler records how they split the points, and the sheet adds them to the unenhanced stats (the tooltip shows "+2 Barbarian (split)"). Points not split yet are listed in the Racial / Class abilities panel. `move` and `step` bonuses are added to the crawler's listed Move and Step.
+
+```yaml
+race-stats: { dex: 2, con: 1 }
+class-stats: { str: 3 }
+```
+
+Every build-point benefit and detriment from the race and class rules is listed in [docs/race-class-benefits.md](docs/race-class-benefits.md), with where each one goes on the note.
 
 **Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities** show their note's `description`.
 
@@ -245,19 +259,25 @@ spells:
 The note says how it's checked and supplies the stat, damage and upgrades; the crawler's entry can still override `stat`.
 
 ```yaml
+quote: It's like a headbutt, only cooler.
 check: attack            # passive | opposed | unopposed | stat | attack
 attack: melee            # attack only: melee | ranged
-stat: dex
+stat: str                # to-hit stat; attacks default to STR (melee) or DEX (ranged)
 opposed-by: int          # opposed only: the antagonist's stat (defaults to `stat`)
+range: 30 feet           # attack only; leave out for melee (5 feet)
 ai-favor: 1
-base-damage: 1d4 + STR Piercing
-limitations: …
+limitations: On Success, you lose 1 Health Bar slot.
+cooldown: 1 round
 description: …
+base-damage: 1d4 + CON Bludgeoning
+effects: …               # anything besides damage
 upgrades:
   5: +1d4 base damage, and this Attack deals Armor-Piercing damage (ignores DR).
   10: +1d4 base damage, …
   15: +1d4 base damage, …
 ```
+
+Every skill and spell card follows the book: name, quote, the stat or keywords line ("Melee Attack, Str"), then Mana Cost, Range, Duration, AI Favor, Limitations, Cooldown, Heals, the description, Base Damage, Effects and Upgrades — each line only when it's set.
 
 **Passive skills** attach to an attack instead of being rolled:
 

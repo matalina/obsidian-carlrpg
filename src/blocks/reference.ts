@@ -3,6 +3,7 @@ import { bonusLabel } from '../rules/items';
 import { formatSize } from '../rules/size';
 import { describeSkillBonuses, readSkillBonuses } from '../rules/skills';
 import { sponsoredCrawlers } from '../rules/sponsors';
+import { describeStatPool, readStatPools } from '../rules/statpoints';
 import { formatMod, statKey, STATS } from '../rules/stats';
 import { LiveBlock, noteName, OBSIDIAN_PROPERTIES, RenderMarkdown } from './shared';
 import { asText, titleCase, toEntries } from './yaml';
@@ -38,12 +39,12 @@ const KINDS: ReferenceKind[] = [
 	{
 		block: RACE_BLOCK,
 		subtitle: () => 'Race',
-		known: ['name', 'size', 'bonuses', 'skills', 'spells', 'description', 'abilities'],
+		known: ['name', 'earth', 'size', 'bonuses', 'stat-points', 'skills', 'spells', 'description', 'abilities'],
 	},
 	{
 		block: CLASS_BLOCK,
 		subtitle: () => 'Class',
-		known: ['name', 'size', 'bonuses', 'skills', 'spells', 'description', 'abilities'],
+		known: ['name', 'earth', 'class-type', 'size', 'bonuses', 'stat-points', 'skills', 'spells', 'description', 'abilities'],
 	},
 	{
 		block: SPONSOR_BLOCK,
@@ -70,7 +71,9 @@ class ReferenceBlock extends LiveBlock {
 		const block = this.containerEl.createDiv({ cls: `carl-block carl-reference ${this.kind.block}` });
 
 		const header = block.createDiv({ cls: 'carl-header' });
-		header.createDiv({ cls: 'carl-name', text: asText(data.name) || noteName(this.sourcePath) });
+		const name = header.createDiv({ cls: 'carl-name', text: asText(data.name) || noteName(this.sourcePath) });
+		// `earth: true` marks an Earth race or class, shown with the book's globe.
+		if (data.earth === true) name.createSpan({ cls: 'carl-earth', text: ' 🌎', attr: { 'aria-label': 'Earth' } });
 		header.createDiv({ cls: 'carl-subtitle', text: this.kind.subtitle(data) });
 
 		this.renderTraits(block, data, md);
@@ -93,17 +96,25 @@ class ReferenceBlock extends LiveBlock {
 		for (const crawler of crawlers) md(crawler, list.createEl('li'));
 	}
 
-	// "Size: Medium (4)", "+5 Dexterity", "+2 Climbing and Perception Skills", each ability, and any other property.
+	// "Class Type: Mage", the description, then "Size: Medium (4)", "+2 Intelligence and Dexterity",
+	// "−2 Constitution and Charisma", "+2 Climbing and Perception Skills", each ability, and any other property.
 	private renderTraits(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) {
+		const classType = asText(data['class-type']);
+		if (classType) md(`**Class Type:** ${classType}`, block.createDiv({ cls: 'carl-class-type' }));
 		const description = asText(data.description);
 		if (description) md(description, block.createDiv({ cls: 'carl-description' }));
 
 		const bullets: string[] = [];
 		const size = formatSize(data.size);
 		if (size) bullets.push(`Size: ${size}`);
-		for (const [key, amount] of bonusEntries(data)) bullets.push(`${formatMod(amount)} ${bonusName(key)}`);
-		bullets.push(...describeSkillBonuses(readSkillBonuses(data)));
-		bullets.push(...describeSkillBonuses(readSkillBonuses(data, 'spells'), 'Spell'));
+		bullets.push(...describeBonuses(bonusEntries(data)));
+		bullets.push(...readStatPools(data).map(describeStatPool));
+		// Skill and spell lines by rank, highest first, spells before skills at the same rank.
+		const ranked = [
+			...describeSkillBonuses(readSkillBonuses(data, 'spells'), 'Spell'),
+			...describeSkillBonuses(readSkillBonuses(data)),
+		];
+		bullets.push(...ranked.sort((a, b) => parseFloat(b) - parseFloat(a)));
 		for (const [name, text] of toEntries(data.abilities)) {
 			bullets.push(text == null ? name : `**${titleCase(name)}:** ${asText(text)}`);
 		}
@@ -124,6 +135,22 @@ function bonusEntries(data: Record<string, unknown>): [key: string, amount: numb
 		const amount = Number(value);
 		return Number.isFinite(amount) ? [[statKey(name), amount]] : [];
 	});
+}
+
+// Bonuses of the same amount share a line, gains before penalties, like the book:
+// "+2 Intelligence and Dexterity", "−2 Constitution and Charisma".
+function describeBonuses(entries: [key: string, amount: number][]): string[] {
+	const byAmount = new Map<number, string[]>();
+	for (const [key, amount] of entries) {
+		if (amount) byAmount.set(amount, [...(byAmount.get(amount) ?? []), bonusName(key)]);
+	}
+	return [...byAmount]
+		.sort(([a], [b]) => Number(b > 0) - Number(a > 0))
+		.map(([amount, names]) => `${formatMod(amount).replace('-', '−')} ${joinAnd(names)}`);
+}
+
+function joinAnd(names: string[]): string {
+	return names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')}, and ${names[names.length - 1]}`;
 }
 
 // Full stat name for stats ("Dexterity"), the bonus label for anything else ("Evade").
