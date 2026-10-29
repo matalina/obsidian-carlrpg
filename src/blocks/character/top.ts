@@ -176,7 +176,10 @@ export function renderAttackTable(root: HTMLElement, sheet: Sheet, md: RenderMar
 			plan.effect,
 			info && !plan.line?.spell && info.aiFavor && `AI favor ${info.aiFavor}`,
 			plan.line?.spell && info?.manaCost != null && `${info.manaCost} MP`,
-			...plan.applied.map((p) => `+ ${p.line.markdown}`),
+			// A passive the entry's own `effect` already names isn't listed twice.
+			...plan.applied
+				.filter((p) => !plan.effect.toLowerCase().includes(p.line.name.toLowerCase()))
+				.map((p) => `+ ${p.line.markdown}`),
 			...plan.optional.map((p) => `${p.line.markdown} (optional)`),
 			plan.disadvantage && 'Disadvantage',
 		].filter(Boolean);

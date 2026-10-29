@@ -3,7 +3,7 @@ import { STATS, statKey } from './stats';
 
 // A skill's own note: how it's checked, which stat it uses, its damage if it's an attack, and its upgrades.
 //
-//   check: passive | opposed | unopposed | stat | attack
+//   check: passive | opposed | unopposed | stat | evade   # evade = an attack ("attack" also works)
 //   stat: int
 //   opposed-by: int          # opposed only — the antagonist's stat; defaults to `stat`
 //   attack: melee | ranged   # attack only; `stat` defaults to STR for melee, DEX for ranged
@@ -72,7 +72,9 @@ export interface SkillInfo {
 }
 
 export function readSkillInfo(props: Record<string, unknown>): SkillInfo {
-	const kind = asText(props.check).trim().toLowerCase() as CheckKind;
+	// Attacks are checked against Evade, so `check: evade` marks one; `attack` is the older spelling.
+	const checked = asText(props.check).trim().toLowerCase();
+	const kind = (checked === 'evade' ? 'attack' : checked) as CheckKind;
 	const attackType = asText(props.attack).toLowerCase();
 	const stat = props.stat == null || props.stat === '' ? defaultAttackStat(kind, attackType) : statKey(asText(props.stat));
 	return {

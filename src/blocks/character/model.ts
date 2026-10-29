@@ -124,8 +124,9 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 	const sponsors = (Array.isArray(data.sponsors) ? data.sponsors : data.sponsors == null ? [] : [data.sponsors])
 		.flatMap((s) => linked(s) ?? []);
 	const grants = [race, cls].flatMap((l) => l ?? []);
-	const skills = skillLines(app, sourcePath, data, grants, 'skills');
-	const spells = skillLines(app, sourcePath, data, grants, 'spells');
+	const floor = data.floor == null || data.floor === '' ? null : Number(data.floor);
+	const skills = skillLines(app, sourcePath, data, grants, 'skills', floor);
+	const spells = skillLines(app, sourcePath, data, grants, 'spells', floor);
 	const sponsorEntries = sponsors.map((sponsor) => ({
 		sponsor,
 		crawlers: sponsoredCrawlers(app, sponsor.file, sponsor.props),
@@ -243,6 +244,7 @@ function skillLines(
 	data: Record<string, unknown>,
 	grants: Linked[],
 	key: 'skills' | 'spells',
+	floor: number | null,
 ): SkillLine[] {
 	const blank = (name: string): SkillLine => ({
 		name,
@@ -292,6 +294,13 @@ function skillLines(
 			if (!line) {
 				line = blank(titleCase(skillName(bonus.name)));
 				lines.push(line);
+			}
+			// Rank F (a natural attack) is the floor number, whatever was trained.
+			if (bonus.floor) {
+				line.rank = Number.isFinite(floor) ? floor : null;
+				line.rankSources = [`F = ${Number.isFinite(floor) ? floor : '? (no floor set)'} (${linkedName(grant)})`];
+				if (bonus.notes) line.notes = [line.notes, bonus.notes].filter(Boolean).join('; ');
+				continue;
 			}
 			if (!line.rankSources.length) line.rankSources.push(`${line.rank ?? 0} trained`);
 			line.rank = (line.rank ?? 0) + bonus.rank;
@@ -378,10 +387,14 @@ export interface AttackPlan {
 }
 
 export function attackPlans(sheet: Sheet): AttackPlan[] {
-	const entries = toEntries(sheet.data.attacks);
+	// An entry may be keyed by a link ("[[Pugilism]]"): match skills and passives by its target.
+	const entries = toEntries(sheet.data.attacks).map(([key, details]) => {
+		const link = parseLink(key);
+		return { name: link?.target ?? key, markdown: link?.bracketed ? `[[${link.text}]]` : titleCase(key), details };
+	});
 	const plans: AttackPlan[] = [];
 
-	for (const [name, details] of entries) {
+	for (const { name, markdown, details } of entries) {
 		const f = toRecord(details);
 		const rank = Number(f.rank) || 0;
 		const stat = asText(f.stat);
@@ -390,7 +403,7 @@ export function attackPlans(sheet: Sheet): AttackPlan[] {
 		plans.push(
 			withPassives(sheet, {
 				name: titleCase(name),
-				markdown: titleCase(name),
+				markdown,
 				line: null,
 				parts: f.rank == null && f.stat == null ? [] : [['rank', rank], ...(stat ? [[titleCase(statKey(stat)), sheet.mod(stat)] as [string, number]] : [])],
 				damage,
@@ -407,7 +420,7 @@ export function attackPlans(sheet: Sheet): AttackPlan[] {
 	}
 
 	for (const { line, rank, stat, statMod: mod, damage } of attackSkills(sheet)) {
-		if (entries.some(([n]) => n.toLowerCase() === line.name.toLowerCase())) continue;
+		if (entries.some((e) => e.name.toLowerCase() === line.name.toLowerCase())) continue;
 		plans.push(
 			withPassives(sheet, {
 				name: line.name,

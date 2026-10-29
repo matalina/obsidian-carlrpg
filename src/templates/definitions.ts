@@ -1,5 +1,5 @@
 // Note templates for every block. Properties match what the blocks read, left empty to fill in.
-// Skill `check`: passive | opposed | unopposed | stat | attack (attack: melee | ranged).
+// Skill `check`: passive | opposed | unopposed | stat | evade (an attack; attack: melee | ranged).
 // `{{title}}` is replaced with the note name (the same placeholder Obsidian's Templates plugin uses).
 
 export interface NoteTemplate {
@@ -237,7 +237,7 @@ upgrades:
 		folder: 'spells',
 		content: card('spell', `quote:
 keywords:
-check: attack
+check: evade
 stat:
 opposed-by:
 mana-cost:
