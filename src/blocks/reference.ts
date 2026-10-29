@@ -114,7 +114,9 @@ class ReferenceBlock extends LiveBlock {
 			...describeSkillBonuses(readSkillBonuses(data, 'spells'), 'Spell'),
 			...describeSkillBonuses(readSkillBonuses(data)),
 		];
-		bullets.push(...ranked.sort((a, b) => parseFloat(b) - parseFloat(a)));
+		// Lines without a leading rank ("… at Rank = Floor") go last.
+		const rankOf = (line: string) => (Number.isNaN(parseFloat(line)) ? -Infinity : parseFloat(line));
+		bullets.push(...ranked.sort((a, b) => (rankOf(a) === rankOf(b) ? 0 : rankOf(b) > rankOf(a) ? 1 : -1)));
 		for (const [name, text] of toEntries(data.abilities)) {
 			bullets.push(text == null ? name : `**${titleCase(name)}:** ${asText(text)}`);
 		}

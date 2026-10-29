@@ -7,6 +7,7 @@
 | +1 to a Stat, Stat detriments | `bonuses: { str: 1 }` (negative for detriments) | Yes — unenhanced stat |
 | Points split between stats | `stat-points: { points: 3, stats: [str, dex] }`, crawler sets `race-stats` / `class-stats` | Yes — unenhanced stat |
 | +1 in a Skill or Spell, Skill detriments | `skills:` / `spells:` | Yes — skill rank |
+| Natural attack (1d6 or 1d8) | `skills: { "[[Bite]]": F }` plus an attack skill note for it | Yes — rank = floor, in Skills and Attacks |
 | +1 DR Buff | `bonuses: { dr: 1 }` | Yes — DR |
 | +5ft Move, +5 Step | `bonuses: { move: 5, step: 5 }` | Yes — Move / Step |
 | Size 2 (Small) or less | `size:` | Yes — size |

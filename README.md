@@ -214,12 +214,26 @@ skills:
   performance:
     rank: 2
     notes: with a stringed instrument specialty
+  "[[Bite]]": F            # a natural attack: Rank = Floor
 abilities:
   - +3 Web Spell, which costs half the normal Mana to cast
   - You have an innate Climb Move equal to your normal Move value
 ```
 
 Rendered like the book: `Class Type: Mage, Necromancer`, the description, `Size: Medium (4)`, `+5 Dexterity` (bonuses of the same amount share a line: `+2 Intelligence and Dexterity`, `−2 Constitution and Charisma`), `+3 points split between Strength, Dexterity, or Constitution`, `+2 Climbing and Performance (with a stringed instrument specialty) Skills`, then each ability.
+
+**Natural attacks** are attack skills granted at rank `F`: the skill's rank on the sheet is the crawler's `floor`, whatever they've trained, and it shows on the race or class card as "Bite Skill at Rank = Floor". Give the skill its own note with the die, stat and damage type, and one more die at Rank 5, 10 and 15:
+
+```yaml
+check: evade
+attack: melee
+stat: str
+base-damage: 1d6 + STR Piercing     # 1d6 (Moderate) or 1d8 (Major)
+upgrades:
+  5: +1d6 base damage
+  10: +1d6 base damage
+  15: +1d6 base damage
+```
 
 The crawler records how they split the points, and the sheet adds them to the unenhanced stats (the tooltip shows "+2 Barbarian (split)"). Points not split yet are listed in the Racial / Class abilities panel. `move` and `step` bonuses are added to the crawler's listed Move and Step.
 
@@ -260,7 +274,7 @@ The note says how it's checked and supplies the stat, damage and upgrades; the c
 
 ```yaml
 quote: It's like a headbutt, only cooler.
-check: attack            # passive | opposed | unopposed | stat | attack
+check: evade             # passive | opposed | unopposed | stat | evade (an attack)
 attack: melee            # attack only: melee | ranged
 stat: str                # to-hit stat; attacks default to STR (melee) or DEX (ranged)
 opposed-by: int          # opposed only: the antagonist's stat (defaults to `stat`)
