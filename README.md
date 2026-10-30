@@ -299,7 +299,15 @@ mechanics:
 
 A crawler's `debuffs` can name or link debuff notes (`- "[[Blinded]]"`, `- Blinded`, or `- Blinded: 2 rounds`). The sheet shows each one with its effect, and its duration on hover.
 
-**Damage types** (`carl-damage-type`) have a `rarity`. **Achievements** (`carl-achievement`) have `text`, `loot-box` and a `contents` list.
+**Damage types** (`carl-damage-type`) have a `rarity`. **Achievements** (`carl-achievement`) have `text`, `loot-box` and a `contents` list. Contents can link to item notes, with a count:
+
+```yaml
+loot-box: Bronze I'm Wet Box
+contents:
+  - "[[Scroll of Water Breathing]]": 10   # shown as "10 × Scroll of Water Breathing"
+  - "[[Pliers]]"
+  - A bucket of pink glitter               # plain text works too
+```
 
 Tagging notes (`carl/creature`, `carl/character`, `carl/item`, `carl/race`, `carl/class`…) makes them easy to collect in a Base.
 

@@ -2,7 +2,7 @@ import { describeMechanics } from '../rules/debuffs';
 import { readTierBenefits } from '../rules/deities';
 import { STATS, statKey } from '../rules/stats';
 import { RenderMarkdown } from './shared';
-import { asText, titleCase } from './yaml';
+import { asText, isRecord, titleCase } from './yaml';
 
 // Card bodies for the rules' reference notes: debuffs, damage types, deities and achievements.
 
@@ -22,11 +22,14 @@ function bullets(block: HTMLElement, md: RenderMarkdown, list: string[]) {
 
 function list(value: unknown): string[] {
 	if (value == null || value === '') return [];
-	return (Array.isArray(value) ? value : [value]).map((v) => {
+	return (Array.isArray(value) ? value : [value]).flatMap((v) => {
 		// An unquoted [[link]] in YAML arrives as nested lists.
 		let inner: unknown = v;
 		while (Array.isArray(inner) && inner.length === 1) inner = inner[0];
-		return Array.isArray(v) ? `[[${asText(inner)}]]` : asText(inner);
+		if (Array.isArray(v)) return [`[[${asText(inner)}]]`];
+		// `- "[[Scroll of Water Breathing]]": 10` → "10 × [[Scroll of Water Breathing]]"
+		if (isRecord(v)) return Object.entries(v).map(([name, qty]) => (qty == null || qty === '' ? name : `${asText(qty)} × ${name}`));
+		return [asText(inner)];
 	}).filter(Boolean);
 }
 
