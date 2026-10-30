@@ -55,6 +55,17 @@ hp-slots: 3
 
 Lists can be written as plain maps or as lists of single-key maps (`- strength: 2`) — both work everywhere.
 
+### Source footer
+
+Every card ends with where it came from, from `source` and `page`:
+
+```yaml
+source: Core Rulebook   # or Homebrew
+page: 212               # a range or list works too: 104–106
+```
+
+→ *Core Rulebook, p. 212*. Either can be left out; with neither, there's no footer.
+
 ## Creatures — `carl-creature`
 
 ```yaml
@@ -361,7 +372,7 @@ damage: 1d4                  # extra bonus damage on a hit
 
 Always-on passives are folded into the attack's to-hit and damage on the sheet and in the widget; optional ones are checkboxes on the attack in the widget. Using the attack marks the passive ✔.
 
-Upgrades are read for damage: **"+1d4 base damage"**, **"+1d4 damage"**, and **"Add 1 Rank damage die"** — the dice for the skill's current rank from Table 37 (rank 5 → +1d4, rank 15 → +1d8 & +1d6).
+Upgrades are read for damage: **"+1d4 base damage"** (with or without the +), **"+1d4 damage"**, and **"Add 1 Rank damage die"** — the dice for the skill's current rank from Table 37 (rank 5 → +1d4, rank 15 → +1d8 & +1d6).
 
 Spells add `quote`, `keywords` (the italic line, e.g. `Attack, Fire`), `mana-cost`, `range`, `duration`, `cooldown` and `heal` (dice of Health Bar slots).
 

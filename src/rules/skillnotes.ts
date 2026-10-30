@@ -203,12 +203,12 @@ export function rankDamageDice(rank: number): string[] {
 	return RANK_DAMAGE_DICE.find(([min]) => rank >= min)?.[1] ?? [];
 }
 
-/** Dice added to base damage by the upgrades reached: "+1d4 base damage", "Add 1 Rank damage die". */
+/** Dice added to base damage by the upgrades reached: "+1d4 base damage" (the book often drops the +), "Add 1 Rank damage die". */
 function upgradeBaseDice(info: SkillInfo, rank: number): string[] {
 	return info.upgrades
 		.filter(([at]) => at <= rank)
 		.flatMap(([, text]) => [
-			...[...text.matchAll(/\+\s*(\d*d\d+)\s+base damage/gi)].map((m) => m[1]!),
+			...[...text.matchAll(/(?:^|\+|,|\band\s)\s*(\d*d\d+)\s+base damage/gi)].map((m) => m[1]!),
 			...[...text.matchAll(/add\s+(\d+)\s+rank damage di(?:e|ce)/gi)].flatMap((m) =>
 				Array.from({ length: Number(m[1]) }, () => rankDamageDice(rank)).flat(),
 			),

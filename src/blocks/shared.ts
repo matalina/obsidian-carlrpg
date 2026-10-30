@@ -13,8 +13,8 @@ import { asText, isRecord, titleCase, toEntries, toRecord } from './yaml';
 // Renders markdown (links, bold, …) into a target element.
 export type RenderMarkdown = (markdown: string, target: HTMLElement) => void;
 
-// Properties Obsidian itself uses; never shown as block content.
-export const OBSIDIAN_PROPERTIES = new Set(['tags', 'aliases', 'cssclasses', 'publish', 'position']);
+// Properties never shown as block content: Obsidian's own, and `source`/`page`, which go in the footer.
+export const HIDDEN_PROPERTIES = new Set(['tags', 'aliases', 'cssclasses', 'publish', 'position', 'source', 'page']);
 
 /**
  * A block whose data is either the YAML inside it or, when the block is empty,
@@ -70,6 +70,8 @@ export abstract class LiveBlock extends MarkdownRenderChild {
 		const data = this.loadData();
 		if (!data) return;
 		this.renderData(data, markdownRenderer(this.app, this.sourcePath, this.content));
+		const block = this.containerEl.querySelector<HTMLElement>(':scope > .carl-block');
+		if (block) renderSource(block, data);
 	}
 
 	private loadData(): Record<string, unknown> | null {
@@ -85,6 +87,14 @@ export abstract class LiveBlock extends MarkdownRenderChild {
 		}
 		return frontmatter;
 	}
+}
+
+// "Core Rulebook, p. 212" or "Homebrew" from `source` and `page`, at the foot of the card.
+export function renderSource(block: HTMLElement, data: Record<string, unknown>) {
+	const source = asText(data.source).trim();
+	const page = asText(data.page).trim();
+	const text = [source, page && `p. ${page}`].filter(Boolean).join(', ');
+	if (text) block.createDiv({ cls: 'carl-source', text });
 }
 
 // Falls back to the note's file name, so a note's properties don't need a `name`.
@@ -225,7 +235,7 @@ export function renderExtras(
 	renderMarkdown: RenderMarkdown,
 ) {
 	const extras = Object.entries(data).filter(
-		([key, value]) => value != null && !isShown(key) && !OBSIDIAN_PROPERTIES.has(key),
+		([key, value]) => value != null && !isShown(key) && !HIDDEN_PROPERTIES.has(key),
 	);
 	if (!extras.length) return;
 
