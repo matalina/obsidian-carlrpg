@@ -5,10 +5,12 @@ import { describeSkillBonuses, readSkillBonuses } from '../rules/skills';
 import { sponsoredCrawlers } from '../rules/sponsors';
 import { describeStatPool, readStatPools } from '../rules/statpoints';
 import { formatMod, statKey, STATS } from '../rules/stats';
+import { achievementBody, damageTypeSubtitle, debuffBody, debuffSubtitle, deityBody } from './lore';
 import { LiveBlock, noteName, OBSIDIAN_PROPERTIES, RenderMarkdown } from './shared';
 import { asText, titleCase, toEntries } from './yaml';
 
-// Cards for the notes a character links to: items (gear and buffs), races and classes.
+// Cards for the notes a character links to: items (gear and buffs), races and classes, sponsors,
+// deities and debuffs — plus damage types and achievements.
 // Laid out like the book's race/class entries — a description, then one bullet per trait.
 // Same properties the character sheet reads, so one note feeds both.
 
@@ -16,6 +18,10 @@ export const ITEM_BLOCK = 'carl-item';
 export const RACE_BLOCK = 'carl-race';
 export const CLASS_BLOCK = 'carl-class';
 export const SPONSOR_BLOCK = 'carl-sponsor';
+export const DEITY_BLOCK = 'carl-deity';
+export const DEBUFF_BLOCK = 'carl-debuff';
+export const DAMAGE_TYPE_BLOCK = 'carl-damage-type';
+export const ACHIEVEMENT_BLOCK = 'carl-achievement';
 
 interface ReferenceKind {
 	block: string;
@@ -25,6 +31,8 @@ interface ReferenceKind {
 	known: string[];
 	/** Lists the crawlers this note sponsors (sponsors only). */
 	crawlers?: boolean;
+	/** Its own layout in place of the description-and-traits list. */
+	body?: (block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) => void;
 }
 
 const KINDS: ReferenceKind[] = [
@@ -52,6 +60,10 @@ const KINDS: ReferenceKind[] = [
 		known: ['name', 'description', 'crawlers'],
 		crawlers: true,
 	},
+	{ block: DEITY_BLOCK, subtitle: (d) => asText(d.title) || 'Deity', known: [], body: deityBody },
+	{ block: DEBUFF_BLOCK, subtitle: debuffSubtitle, known: [], body: debuffBody },
+	{ block: DAMAGE_TYPE_BLOCK, subtitle: damageTypeSubtitle, known: [], body: () => undefined },
+	{ block: ACHIEVEMENT_BLOCK, subtitle: () => 'Achievement', known: [], body: achievementBody },
 ];
 
 export function referenceBlocks(app: App) {
@@ -76,7 +88,8 @@ class ReferenceBlock extends LiveBlock {
 		if (data.earth === true) name.createSpan({ cls: 'carl-earth', text: ' 🌎', attr: { 'aria-label': 'Earth' } });
 		header.createDiv({ cls: 'carl-subtitle', text: this.kind.subtitle(data) });
 
-		this.renderTraits(block, data, md);
+		if (this.kind.body) this.kind.body(block, data, md);
+		else this.renderTraits(block, data, md);
 		if (this.kind.crawlers) this.renderCrawlers(block, data, md);
 	}
 

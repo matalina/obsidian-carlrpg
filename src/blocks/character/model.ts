@@ -15,6 +15,7 @@ import { readSkillBonuses, skillKey } from '../../rules/skills';
 import { sponsoredCrawlers } from '../../rules/sponsors';
 import { readStatPools, splitStatPoints, StatPool } from '../../rules/statpoints';
 import { asText, isRecord, titleCase, toEntries, toRecord } from '../yaml';
+import { listEntries } from './ui';
 
 export const GEAR_SLOTS: [key: string, label: string][] = [
 	['head', 'Head'],
@@ -82,6 +83,8 @@ export interface Sheet {
 	pet: Linked | null;
 	mount: Linked | null;
 	deity: Linked | null;
+	/** `debuffs` entries, each with its debuff note when one matches ("[[Blinded]]" or plain "Blinded"). */
+	debuffs: DebuffEntry[];
 	sponsors: SponsorEntry[];
 	/** Skills the character lists, with race/class ranks added, plus skills only race/class grant. */
 	skills: SkillLine[];
@@ -100,6 +103,12 @@ export interface Sheet {
 	step: string;
 	/** Race/class stat points the crawler hasn't split yet (`race-stats` / `class-stats`). */
 	unspentStatPoints: { race: UnspentPoints[]; class: UnspentPoints[] };
+}
+
+export interface DebuffEntry {
+	linked: Linked;
+	/** What the entry adds, e.g. `- Blinded: 2 rounds`. */
+	detail: string;
 }
 
 export interface UnspentPoints {
@@ -121,6 +130,10 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 	const pet = linked(data.pet);
 	const mount = linked(data.mount);
 	const deity = linked(data.deity);
+	const debuffs = listEntries(data.debuffs).flatMap(([name, value]): DebuffEntry[] => {
+		const debuff = linked(name);
+		return debuff ? [{ linked: debuff, detail: value == null ? '' : asText(value) }] : [];
+	});
 	const sponsors = (Array.isArray(data.sponsors) ? data.sponsors : data.sponsors == null ? [] : [data.sponsors])
 		.flatMap((s) => linked(s) ?? []);
 	const grants = [race, cls].flatMap((l) => l ?? []);
@@ -167,6 +180,7 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 		pet,
 		mount,
 		deity,
+		debuffs,
 		sponsors: sponsorEntries,
 		skills,
 		spells,
@@ -174,6 +188,7 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 			...gearItems,
 			...buffs,
 			...[race, cls, pet, mount, deity, ...sponsors].flatMap((l) => l ?? []),
+			...debuffs.map((d) => d.linked),
 			...[...skills, ...spells].flatMap((s) => s.note ?? []),
 		],
 		statMods: Object.fromEntries(stats.map((s) => [s.key, statMod(s.enhanced)])),

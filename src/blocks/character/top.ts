@@ -1,11 +1,12 @@
 import { formatSize } from '../../rules/size';
 import { setTooltip } from 'obsidian';
+import { describeMechanics } from '../../rules/debuffs';
 import { formatBonuses, isMissing, linkMarkdown } from '../../rules/items';
 import { formatMod, statMod } from '../../rules/stats';
 import { describeArea, noteName, readPair, RenderMarkdown, renderHealth } from '../shared';
 import { asText, titleCase } from '../yaml';
 import { attackPlans, DEFAULT_HEALTH_SLOTS, MAX_EXTERNAL_BUFFS, Sheet, withStatMods } from './model';
-import { field, op, panel, table, text } from './ui';
+import { field, op, panel, table } from './ui';
 
 // Page 1: identity and health across the top, stats in three columns, then evade/DR/mana,
 // debuffs and buffs beside the portrait.
@@ -111,8 +112,25 @@ function renderDefenses(col: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 	const status = col.createDiv({ cls: 'carl-status' });
 	const debuffs = status.createDiv({ cls: 'carl-debuffs' });
 	debuffs.createDiv({ cls: 'carl-field-label', text: 'Debuffs' });
-	md(text(d.debuffs), debuffs.createDiv({ cls: 'carl-field-value' }));
+	renderDebuffs(debuffs.createDiv({ cls: 'carl-field-value' }), sheet, md);
 	renderBuffs(status, sheet, md);
+}
+
+// Each debuff with its note's effect and duration (or its mechanics when it has no effect text).
+function renderDebuffs(body: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
+	for (const { linked, detail } of sheet.debuffs) {
+		const row = body.createDiv({ cls: 'carl-debuff-row' });
+		const name = linkMarkdown(linked) || asText(linked.props.name);
+		const p = linked.props;
+		const effect = asText(p.effect) || describeMechanics(p.mechanics).join(', ');
+		const duration = asText(p.duration);
+		md(`**${name}**${detail ? ` (${detail})` : ''}`, row.createDiv());
+		if (effect) {
+			const line = row.createDiv({ cls: 'carl-muted' });
+			md(effect, line);
+			if (duration) setTooltip(line, duration);
+		}
+	}
 }
 
 function renderPortrait(col: HTMLElement, sheet: Sheet, md: RenderMarkdown) {

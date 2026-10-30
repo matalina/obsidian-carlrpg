@@ -135,6 +135,43 @@
 	margin-top: var(--size-4-1);
 }
 
+/* Debuff, deity and achievement facts: "**Effect:** …" lines */
+.carl-reference .carl-facts {
+	margin-top: var(--size-4-2);
+}
+
+.carl-reference .carl-facts p,
+.carl-tier p {
+	margin: 0;
+}
+
+/* Deity benefits by Tier of Devotion; tiers a crawler hasn't reached are dimmed */
+.carl-tier {
+	margin-top: var(--size-4-2);
+}
+
+.carl-tier .carl-subhead {
+	padding-left: 0;
+	margin-bottom: 0;
+}
+
+.carl-tier .carl-trait-list {
+	margin-top: 0;
+}
+
+.carl-tier.is-locked {
+	opacity: 0.5;
+}
+
+/* Linked debuffs on the sheet: the name, then the effect */
+.carl-debuff-row + .carl-debuff-row {
+	margin-top: var(--size-4-1);
+}
+
+.carl-debuff-row p {
+	margin: 0;
+}
+
 /* A sheet panel shown on its own note (carl-mount) */
 .carl-standalone {
 	max-width: 24em;

@@ -19,6 +19,10 @@ Write a creature, crawler, item, race or class as properties (or YAML) and the p
 | `carl-actions` | A play panel for a party and their opponents: rolls, health, mana, debuffs, hotlist. |
 | `carl-mount` | A mount or vehicle statblock, like `carl-creature`: "Vehicle; Large (5)", health slots worth the size value (or the CON mod for a living mount), Occupants / Move / DR, any stats and attacks, then accessories. The crawler's sheet shows the same mount in its Mount panel. |
 | `carl-sponsor` | A sponsor: name, description and the crawlers it sponsors. |
+| `carl-deity` | A god: title, description, symbol, temple, signature stat and skills, then benefits by Tier of Devotion. |
+| `carl-debuff` | A debuff: effect, duration and whether it stacks. |
+| `carl-damage-type` | A damage type and its rarity. |
+| `carl-achievement` | An achievement: its text, loot box and contents. |
 
 ### Two ways to feed a block
 
@@ -163,6 +167,7 @@ space-tier: 2
 space-size: Small
 amenities: ["Shower"]
 deity: "[[Grull]]"
+devotion: acolyte          # Tier of Devotion: acolyte | devotee | zealot
 racial-abilities: []       # added after the race note's abilities
 class-abilities: []
 sponsors: ["[[Valtay Corporation]]"]
@@ -244,7 +249,7 @@ class-stats: { str: 3 }
 
 Every build-point benefit and detriment from the race and class rules is listed in [docs/race-class-benefits.md](docs/race-class-benefits.md), with where each one goes on the note.
 
-**Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities** show their note's `description`.
+**Pets** use creature properties. **Mounts / vehicles** use `hp-slots`, `hp-current`, `size`, `occupants`, `move`, `dr` and `accessories`; each health slot is worth the vehicle's size value (1–8). **Deities** show their description and their benefits by tier (see below).
 
 **Sponsors** (`carl-sponsor`) have a `name`, `description` and the crawlers they sponsor — on the sponsor's own card and on every sponsored crawler's sheet. Crawlers are found automatically from any note whose `sponsors` links to the sponsor with a `[[link]]` (read from Obsidian's link index, not by scanning the vault); list others (without notes) in `crawlers`:
 
@@ -254,6 +259,47 @@ description: Pays well for spectacle.
 crawlers:
   - Some crawler without a note
 ```
+
+**Deities** (`carl-deity`):
+
+```yaml
+title: The Blessed Oak Mother
+description: …
+symbol: …
+temple: Sacred Grove of the Divine
+high-cleric: Arkangel Debadora
+offering: A single tear shed in sadness
+rival: "[[Nekhebit]]"
+likely-sponsor: The Dream
+signature-stat: intelligence
+signature-skills: ["[[Catcher]]", "[[Shield]]"]
+tier-benefits:
+  acolyte: [ … ]
+  devotee: [ … ]
+  zealot: [ … ]
+```
+
+On the crawler, `devotion: acolyte | devotee | zealot` is their Tier of Devotion. The sheet's Deity panel shows it, with every tier's benefits and the ones not reached yet dimmed. Without `devotion`, all tiers show.
+
+**Debuffs** (`carl-debuff`):
+
+```yaml
+effect: Roll all Skill Checks that require sight with Disadvantage.
+duration: Until the end of the next round.
+stackable: false
+categories: [damage]
+mechanics:
+  disadvantage: sight      # all | attacks | sight | next-check | next-attack
+  check-penalty: -2
+  damage: 1d6+F Fire
+  move-multiplier: 0.5
+  cant-act: true           # also: no-move, no-step, no-spells, no-heal, no-dex-mod,
+                           #       attacked-with-advantage, halve-highest-stat
+```
+
+A crawler's `debuffs` can name or link debuff notes (`- "[[Blinded]]"`, `- Blinded`, or `- Blinded: 2 rounds`). The sheet shows each one with its effect, and its duration on hover.
+
+**Damage types** (`carl-damage-type`) have a `rarity`. **Achievements** (`carl-achievement`) have `text`, `loot-box` and a `contents` list.
 
 Tagging notes (`carl/creature`, `carl/character`, `carl/item`, `carl/race`, `carl/class`…) makes them easy to collect in a Base.
 
@@ -410,7 +456,7 @@ Write your own title after the type to replace the default.
 
 | Command | Does |
 | --- | --- |
-| **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `skill`, `spell`, `mount`, `sponsor` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
+| **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `skill`, `spell`, `mount`, `sponsor`, `deity`, `debuff`, `damage-type`, `achievement` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
 | **New mob**, **New NPC**, **New crawler**, … | Asks for a name and creates the note in that type's folder (`mobs/`, `npcs/`, `crawlers/`…), then opens it. Uses your copy of the template from the templates folder when there is one, otherwise the built-in one. |
 
 `{{title}}` and `{{date}}` in a template are filled in, the same placeholders the core Templates plugin uses — so the files also work with **Templates: Insert template**.
