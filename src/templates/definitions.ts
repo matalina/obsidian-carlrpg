@@ -1,5 +1,6 @@
 // Note templates for every block. Properties match what the blocks read, left empty to fill in.
 // Skill `check`: passive | opposed | unopposed | stat | evade (an attack; attack: melee | ranged).
+// `source` and `page` ("Core Rulebook", 212, or "Homebrew") show in each card's footer.
 // `{{title}}` is replaced with the note name (the same placeholder Obsidian's Templates plugin uses).
 
 export interface NoteTemplate {
@@ -48,6 +49,8 @@ ${STATS}
 ${ATTACK}
 traits:
   - trait name: details
+source:
+page:
 ---
 # {{title}}
 
@@ -61,10 +64,13 @@ traits:
 \`\`\`
 `;
 
+// Every card ends with `source` and `page`, shown in its footer.
 const card = (tag: string, properties: string, block: string) => `---
 tags:
   - carl/${tag}
 ${properties}
+source:
+page:
 ---
 # {{title}}
 
@@ -298,8 +304,7 @@ signature-skills: []
 tier-benefits:
   acolyte: []
   devotee: []
-  zealot: []
-page:`, 'carl-deity'),
+  zealot: []`, 'carl-deity'),
 	},
 	{
 		id: 'debuff',
@@ -311,8 +316,7 @@ effect:
 duration:
 stackable: false
 categories: []
-mechanics: {}
-page:`, 'carl-debuff'),
+mechanics: {}`, 'carl-debuff'),
 	},
 	{
 		id: 'damage-type',
@@ -320,8 +324,7 @@ page:`, 'carl-debuff'),
 		file: 'damage-type.md',
 		folder: 'damage-types',
 		content: card('damage-type', `name:
-rarity: common
-page:`, 'carl-damage-type'),
+rarity: common`, 'carl-damage-type'),
 	},
 	{
 		id: 'achievement',
@@ -331,7 +334,6 @@ page:`, 'carl-damage-type'),
 		content: card('achievement', `name:
 text:
 loot-box:
-contents: []
-page:`, 'carl-achievement'),
+contents: []`, 'carl-achievement'),
 	},
 ];

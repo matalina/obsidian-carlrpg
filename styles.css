@@ -263,6 +263,17 @@
 	font-size: var(--font-ui-smaller);
 }
 
+/* "Core Rulebook, p. 212" at the foot of a card. */
+.carl-source {
+	margin-top: 0.75em;
+	padding-top: 0.4em;
+	border-top: 1px solid var(--background-modifier-border);
+	color: var(--text-faint);
+	font-size: var(--font-ui-smaller);
+	font-style: italic;
+	text-align: right;
+}
+
 .carl-center {
 	text-align: center;
 }

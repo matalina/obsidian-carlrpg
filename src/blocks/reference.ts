@@ -6,7 +6,7 @@ import { sponsoredCrawlers } from '../rules/sponsors';
 import { describeStatPool, readStatPools } from '../rules/statpoints';
 import { formatMod, statKey, STATS } from '../rules/stats';
 import { achievementBody, damageTypeSubtitle, debuffBody, debuffSubtitle, deityBody } from './lore';
-import { LiveBlock, noteName, OBSIDIAN_PROPERTIES, RenderMarkdown } from './shared';
+import { HIDDEN_PROPERTIES, LiveBlock, noteName, RenderMarkdown } from './shared';
 import { asText, titleCase, toEntries } from './yaml';
 
 // Cards for the notes a character links to: items (gear and buffs), races and classes, sponsors,
@@ -134,7 +134,7 @@ class ReferenceBlock extends LiveBlock {
 			bullets.push(text == null ? name : `**${titleCase(name)}:** ${asText(text)}`);
 		}
 		for (const [key, value] of Object.entries(data)) {
-			if (value == null || this.kind.known.includes(key) || OBSIDIAN_PROPERTIES.has(key)) continue;
+			if (value == null || this.kind.known.includes(key) || HIDDEN_PROPERTIES.has(key)) continue;
 			bullets.push(`${titleCase(key)}: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
 		}
 		if (!bullets.length) return;
