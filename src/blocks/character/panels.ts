@@ -4,6 +4,8 @@ import { collectStats, formatMod, statMod } from '../../rules/stats';
 import { readPair, RenderMarkdown, renderAttacks, renderHealth, renderNotes } from '../shared';
 import { asText, titleCase } from '../yaml';
 import { describeStatPool } from '../../rules/statpoints';
+import { tiersReached } from '../../rules/deities';
+import { renderTierBenefits } from '../lore';
 import { Sheet, UnspentPoints } from './model';
 import { panel, rows, text } from './ui';
 
@@ -18,7 +20,7 @@ export function renderPanels(root: HTMLElement, sheet: Sheet, md: RenderMarkdown
 	listPanel(grid, "Important things I've killed", d.kills, md);
 	listPanel(grid, 'Clubs, societies, guilds, etc', d.clubs, md);
 	renderPersonalSpace(grid, d, md);
-	if (sheet.deity) renderLinkedText(panel(grid, 'Deity'), sheet.deity, md);
+	if (sheet.deity) renderDeity(panel(grid, 'Deity'), sheet.deity, d.devotion, md);
 	const unspent = (list: UnspentPoints[], key: string) =>
 		list.map(({ pool, points }) => `*${describeStatPool({ ...pool, points })} — not split yet (set \`${key}\`)*`);
 	listPanel(grid, 'Racial abilities', [
@@ -74,6 +76,15 @@ function renderLinkedText(body: HTMLElement, linked: Linked, md: RenderMarkdown)
 	if (name) md(`**${name}**${isMissing(linked) ? ' (no note found)' : ''}`, body.createDiv());
 	const description = text(linked.props.description);
 	if (description) md(description, body.createDiv({ cls: 'carl-panel-text' }));
+}
+
+// The deity with the crawler's Tier of Devotion (`devotion`), and the benefits for each tier —
+// the ones not reached yet dimmed. Without `devotion`, every tier shows as reached.
+function renderDeity(body: HTMLElement, deity: Linked, devotion: unknown, md: RenderMarkdown) {
+	renderLinkedText(body, deity, md);
+	const reached = tiersReached(devotion);
+	if (reached.length) md(`**Tier of Devotion:** ${titleCase(reached[reached.length - 1]!)}`, body.createDiv());
+	renderTierBenefits(body, deity.props, md, reached.length ? reached : undefined);
 }
 
 // Same properties as a creature note: hp-slots/hp-current, stats, level, dr, evade, move, size, attacks.

@@ -145,6 +145,7 @@ space-tier:
 space-size:
 amenities: []
 deity:
+devotion:
 race-stats: {}
 class-stats: {}
 racial-abilities: []
@@ -277,5 +278,60 @@ accessories: []`, 'carl-mount'),
 		content: card('sponsor', `name:
 description:
 crawlers: []`, 'carl-sponsor'),
+	},
+	{
+		id: 'deity',
+		label: 'deity',
+		file: 'deity.md',
+		folder: 'deities',
+		content: card('deity', `name:
+title:
+description:
+symbol:
+temple:
+high-cleric:
+offering:
+rival:
+likely-sponsor:
+signature-stat:
+signature-skills: []
+tier-benefits:
+  acolyte: []
+  devotee: []
+  zealot: []
+page:`, 'carl-deity'),
+	},
+	{
+		id: 'debuff',
+		label: 'debuff',
+		file: 'debuff.md',
+		folder: 'debuffs',
+		content: card('debuff', `name:
+effect:
+duration:
+stackable: false
+categories: []
+mechanics: {}
+page:`, 'carl-debuff'),
+	},
+	{
+		id: 'damage-type',
+		label: 'damage type',
+		file: 'damage-type.md',
+		folder: 'damage-types',
+		content: card('damage-type', `name:
+rarity: common
+page:`, 'carl-damage-type'),
+	},
+	{
+		id: 'achievement',
+		label: 'achievement',
+		file: 'achievement.md',
+		folder: 'achievements',
+		content: card('achievement', `name:
+text:
+loot-box:
+contents: []
+page:`, 'carl-achievement'),
 	},
 ];
