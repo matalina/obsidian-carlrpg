@@ -1021,3 +1021,35 @@
 .carl-forge-preview .carl-health {
 	overflow-x: auto;
 }
+
+.carl-forge-traits {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-2);
+	padding-block-end: var(--size-4-2);
+}
+
+.carl-forge-trait {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-2-2);
+	padding: var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+}
+
+.carl-forge-trait-top {
+	display: flex;
+	gap: var(--size-2-2);
+	align-items: center;
+}
+
+.carl-forge-trait-top input {
+	flex: 1;
+	min-width: 0;
+}
+
+.carl-forge-trait textarea {
+	width: 100%;
+	resize: vertical;
+}

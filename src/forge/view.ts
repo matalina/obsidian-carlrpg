@@ -1,12 +1,12 @@
-import { Component, ItemView, Notice, Setting, WorkspaceLeaf } from 'obsidian';
-import { markdownRenderer, renderAttacks, renderGrid, renderHealth } from '../blocks/shared';
+import { Component, ItemView, Notice, setIcon, Setting, WorkspaceLeaf } from 'obsidian';
+import { markdownRenderer, renderAttacks, renderGrid, renderHealth, renderNotes } from '../blocks/shared';
 import { formatSize } from '../rules/size';
 import { formatMod, statMod } from '../rules/stats';
 import { titleCase } from '../blocks/yaml';
 import type CarlPlugin from '../main';
 import { createNote, templateSource } from '../templates/commands';
 import { TEMPLATES } from '../templates/definitions';
-import { fillMobTemplate, mobRecord } from './frontmatter';
+import { fillMobTemplate, mobRecord, Trait } from './frontmatter';
 import { ForgedMob, ForgeOptions, forgeMob, levelRange, suggestLevel } from './generate';
 import { CREATURE_TYPES, RANKS, Rank, Role, ROLES, STAT_KEYS } from './tables';
 
@@ -33,6 +33,9 @@ export class MobForgeView extends ItemView {
 		armor: null,
 	};
 	private mob: ForgedMob | null = null;
+	/** Typed by hand and kept across rolls; never generated. */
+	private traits: Trait[] = [];
+	private traitsEl: HTMLElement | null = null;
 	private levelInput: HTMLInputElement | null = null;
 	private hintEl: HTMLElement | null = null;
 	private previewEl: HTMLElement | null = null;
@@ -110,6 +113,14 @@ export class MobForgeView extends ItemView {
 		});
 
 		new Setting(form)
+			.setName('Traits')
+			.setDesc('Special abilities and notes. Kept when you roll again.')
+			.setHeading()
+			.addExtraButton((b) => b.setIcon('plus').setTooltip('Add trait').onClick(() => this.addTrait()));
+		this.traitsEl = form.createDiv({ cls: 'carl-forge-traits' });
+		this.renderTraits();
+
+		new Setting(form)
 			.addButton((b) => b.setButtonText('Roll').setCta().onClick(() => this.roll()))
 			.addButton((b) => b.setButtonText('Create note').onClick(() => void this.createNote()))
 			.addExtraButton((b) => b.setIcon('copy').setTooltip('Copy as note').onClick(() => void this.copy()));
@@ -121,6 +132,45 @@ export class MobForgeView extends ItemView {
 
 	async onClose() {
 		this.contentEl.empty();
+	}
+
+	private addTrait() {
+		this.traits.push({ name: '', details: '' });
+		this.renderTraits();
+		this.traitsEl?.querySelector<HTMLInputElement>('.carl-forge-trait:last-child input')?.focus();
+	}
+
+	private renderTraits() {
+		const el = this.traitsEl;
+		if (!el) return;
+		el.empty();
+		if (!this.traits.length) {
+			el.createDiv({ cls: 'carl-forge-hint', text: 'No traits. Select + to add one, or add them to the note later.' });
+			return;
+		}
+		this.traits.forEach((trait, i) => {
+			const row = el.createDiv({ cls: 'carl-forge-trait' });
+			const top = row.createDiv({ cls: 'carl-forge-trait-top' });
+			const name = top.createEl('input', { type: 'text', placeholder: 'Trait name', value: trait.name });
+			name.setAttr('aria-label', 'Trait name');
+			name.addEventListener('input', () => {
+				trait.name = name.value;
+				this.renderPreview();
+			});
+			const remove = top.createEl('button', { cls: 'clickable-icon', attr: { 'aria-label': 'Remove trait' } });
+			setIcon(remove, 'x');
+			remove.addEventListener('click', () => {
+				this.traits.splice(i, 1);
+				this.renderTraits();
+				this.renderPreview();
+			});
+			const details = row.createEl('textarea', { placeholder: 'What it does', attr: { rows: '3', 'aria-label': 'Trait details' } });
+			details.value = trait.details;
+			details.addEventListener('input', () => {
+				trait.details = details.value;
+				this.renderPreview();
+			});
+		});
 	}
 
 	private suggest() {
@@ -147,7 +197,7 @@ export class MobForgeView extends ItemView {
 		this.previewComponent = this.addChild(new Component());
 		el.empty();
 
-		const data = mobRecord(mob);
+		const data = mobRecord(mob, this.traits);
 		const block = el.createDiv({ cls: 'carl-block carl-creature' });
 		const header = block.createDiv({ cls: 'carl-header' });
 		header.createDiv({ cls: 'carl-name', text: this.name || 'Unnamed mob' });
@@ -162,12 +212,14 @@ export class MobForgeView extends ItemView {
 			'carl-stats',
 			STAT_KEYS.map((k) => [titleCase(k.slice(0, 3)), `${mob.stats[k]} (${formatMod(statMod(mob.stats[k]))})`]),
 		);
-		renderAttacks(block, data.attacks, markdownRenderer(this.app, '', this.previewComponent));
+		const md = markdownRenderer(this.app, '', this.previewComponent);
+		renderAttacks(block, data.attacks, md);
+		renderNotes(block, data.traits, md);
 	}
 
 	private async noteText(): Promise<string> {
 		const template = TEMPLATES.find((t) => t.id === 'mob')!;
-		return fillMobTemplate(await templateSource(this.plugin, template), this.mob!);
+		return fillMobTemplate(await templateSource(this.plugin, template), this.mob!, this.traits);
 	}
 
 	private async createNote() {
@@ -178,7 +230,8 @@ export class MobForgeView extends ItemView {
 		}
 		const template = TEMPLATES.find((t) => t.id === 'mob')!;
 		const mob = this.mob;
-		await createNote(this.plugin, template, this.name, (source) => fillMobTemplate(source, mob));
+		const traits = this.traits.map((t) => ({ ...t }));
+		await createNote(this.plugin, template, this.name, (source) => fillMobTemplate(source, mob, traits));
 	}
 
 	private async copy() {

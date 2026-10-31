@@ -1,4 +1,5 @@
 import type CarlPlugin from '../main';
+import { registerTraitCommand } from './traits';
 import { MOB_FORGE_VIEW, MobForgeView } from './view';
 
 export function registerMobForge(plugin: CarlPlugin) {
@@ -9,6 +10,7 @@ export function registerMobForge(plugin: CarlPlugin) {
 		name: 'Open mob forge',
 		callback: () => void openMobForge(plugin),
 	});
+	registerTraitCommand(plugin);
 }
 
 async function openMobForge(plugin: CarlPlugin) {
