@@ -471,11 +471,41 @@ A family of "system interface" callouts, typed like any built-in callout:
 
 Write your own title after the type to replace the default.
 
+## Mob forge
+
+A sidebar panel that rolls a starting statblock for a mob or boss, then turns it into a note. Open it from the dice icon in the ribbon or the **Open mob forge** command.
+
+1. Set the **Floor** and **Rank** (Mob, Neighborhood, Borough, City, Province, Country or Floor Boss). Changing either suggests a **Level** in the typical range for that floor, shown under the field; type over it or select the wand for another suggestion.
+2. Pick a **Size**, **Type**, **Role** and **Armor**. The role decides where stat points go and which attacks the mob gets: Brute (Strength, Constitution, melee), Skirmisher (Dexterity, ranged), Caster (Intelligence, spells), Sneak (Dexterity and Intelligence), Showboat (Charisma) or an even spread.
+3. Select **Roll**. The preview draws the result as a `carl-creature` card. Roll again until one fits.
+4. Select **Create note** to make a note in your mobs folder from the mob template, with every property filled in, or the copy icon to put the same note on the clipboard. Your copy of `mob.md` in the templates folder is used when there is one, so your own body text and callouts stay.
+
+The numbers follow the build rules in the Core Rulebook's guide to creating your own Mobs and Bosses:
+
+| Entry | Rule |
+| --- | --- |
+| Stats | Mobs start at 1 in each stat with 3 points per Level. Bosses start at 5 with 3–10 points per Level by tier. |
+| Health slots | Mobs: Level, up to 10. Bosses: 10, 15, 20, 25, 30 or 40 by tier, + Floor. Each slot is worth the CON mod. |
+| Surprise / Evade | 10 + INT / 10 + DEX, then +F |
+| To hit | 10 + the attack's stat mod, then +F |
+| Damage | Dice count by Level (1d at 1–4 up to 15d at 250+), d6 standard, + the stat mod. Area attacks and attacks with a debuff lose 1d. |
+| DR | The floor number, +1–2 for armor or hide, −1–2 for casters |
+
+Attacks are labelled by kind (*Melee attack*, *Ranged attack*, *Spell*) for you to rename. Their damage types, ranges, areas and debuffs are picked at random, weighted by how often each appears in the rulebook's statblocks. The stat spread, die sizes and debuffs change on every roll; the rest is the rules above.
+
+### Traits
+
+Traits are never rolled. The **Traits** section of the panel starts empty; select **+** to add one with a name and details, and **×** to remove it. Traits you type are kept when you roll again and go into the note. With none, `traits:` is left empty.
+
+To add a trait to a note later, open it and run **Add trait to this note**. The trait is added to the note's `traits` list (replacing the template's `trait name: details` placeholder) and the rest of its properties are left as they are.
+
 ## Templates and commands
 
 | Command | Does |
 | --- | --- |
 | **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `skill`, `spell`, `mount`, `sponsor`, `deity`, `debuff`, `damage-type`, `achievement` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
+| **Open mob forge** | Opens the [mob forge](#mob-forge) panel in the right sidebar. |
+| **Add trait to this note** | Adds a trait to the open note's `traits` list. |
 | **New mob**, **New NPC**, **New crawler**, … | Asks for a name and creates the note in that type's folder (`mobs/`, `npcs/`, `crawlers/`…), then opens it. Uses your copy of the template from the templates folder when there is one, otherwise the built-in one. |
 
 `{{title}}` and `{{date}}` in a template are filled in, the same placeholders the core Templates plugin uses — so the files also work with **Templates: Insert template**.
@@ -504,12 +534,18 @@ Source layout:
 
 ```
 src/
-  main.ts                 registers the blocks
+  main.ts                 registers the blocks, commands and the mob forge view
   blocks/
     shared.ts             LiveBlock (properties/YAML + live updates), health bar, attacks
     creature.ts           carl-creature
     reference.ts          carl-item, carl-race, carl-class
     character/            carl-character: model (calculations), top, sections, panels, ui
+  forge/
+    tables.ts             build rules (Tables 50, 51) and weighted attack tables
+    generate.ts           rolls a mob or boss from the panel's options
+    frontmatter.ts        writes a rolled mob into the mob template
+    traits.ts             Add trait command and modal
+    view.ts               the sidebar panel
   rules/                  stat mods, size table, item links and bonuses, skill bonuses
 ```
 
