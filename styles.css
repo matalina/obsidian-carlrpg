@@ -992,3 +992,32 @@
 	background: var(--color-red);
 	color: white;
 }
+
+/* Mob forge sidebar panel */
+.carl-forge {
+	display: flex;
+	flex-direction: column;
+	gap: var(--size-4-3);
+}
+
+.carl-forge-form .setting-item {
+	padding-block: var(--size-2-2);
+}
+
+.carl-forge-form input[type='number'] {
+	width: 5.5em;
+}
+
+.carl-forge-hint {
+	color: var(--text-muted);
+	font-size: var(--font-ui-smaller);
+	padding-block-end: var(--size-2-2);
+}
+
+.carl-forge-preview .carl-block {
+	margin: 0;
+}
+
+.carl-forge-preview .carl-health {
+	overflow-x: auto;
+}

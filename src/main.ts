@@ -6,6 +6,7 @@ import { MOUNT_BLOCK, renderMountBlock } from './blocks/mount';
 import { referenceBlocks } from './blocks/reference';
 import { renderSkillBlock, renderSpellBlock, SKILL_BLOCK, SPELL_BLOCK } from './blocks/skill';
 import { registerCallouts } from './callouts';
+import { registerMobForge } from './forge/index';
 import { CarlSettings, CarlSettingTab, DEFAULT_SETTINGS } from './settings';
 import { registerTemplateCommands } from './templates/commands';
 
@@ -39,6 +40,7 @@ export default class CarlPlugin extends Plugin {
 
 		registerCallouts(this);
 		registerTemplateCommands(this);
+		registerMobForge(this);
 		this.addSettingTab(new CarlSettingTab(this.app, this));
 	}
 

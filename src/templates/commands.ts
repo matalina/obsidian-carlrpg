@@ -44,18 +44,30 @@ async function createTemplateFiles(plugin: CarlPlugin) {
 }
 
 // Uses the template file from the templates folder when there is one (so your edits apply),
-// otherwise the built-in template.
-async function createNote(plugin: CarlPlugin, template: NoteTemplate, name: string) {
+// otherwise the built-in template. `fill` can change the template text before placeholders are replaced.
+export async function createNote(
+	plugin: CarlPlugin,
+	template: NoteTemplate,
+	name: string,
+	fill: (source: string) => string = (source) => source,
+) {
 	const { app } = plugin;
 	const folder = plugin.settings.folders[template.id] || template.folder;
 	await ensureFolder(app, folder);
 
-	const custom = app.vault.getAbstractFileByPath(normalizePath(`${await templatesFolder(plugin)}/${template.file}`));
-	const source = custom instanceof TFile ? await app.vault.read(custom) : template.content;
-	const content = source.replace(/\{\{title\}\}/g, name).replace(/\{\{date\}\}/g, window.moment().format('YYYY-MM-DD'));
+	const source = await templateSource(plugin, template);
+	const content = fill(source).replace(/\{\{title\}\}/g, name).replace(/\{\{date\}\}/g, window.moment().format('YYYY-MM-DD'));
 
 	const file = await app.vault.create(availablePath(app, folder, name), content);
 	await app.workspace.getLeaf(false).openFile(file);
+}
+
+/** The template file's text from the templates folder, or the built-in template when there isn't one. */
+export async function templateSource(plugin: CarlPlugin, template: NoteTemplate): Promise<string> {
+	const custom = plugin.app.vault.getAbstractFileByPath(
+		normalizePath(`${await templatesFolder(plugin)}/${template.file}`),
+	);
+	return custom instanceof TFile ? await plugin.app.vault.read(custom) : template.content;
 }
 
 async function templatesFolder(plugin: CarlPlugin): Promise<string> {
