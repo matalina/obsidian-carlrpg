@@ -84,12 +84,12 @@ async function templatesFolder(plugin: CarlPlugin): Promise<string> {
 	return '_templates';
 }
 
-async function ensureFolder(app: App, folder: string) {
+export async function ensureFolder(app: App, folder: string) {
 	if (folder && !app.vault.getAbstractFileByPath(folder)) await app.vault.createFolder(folder);
 }
 
 // "Name.md", or "Name 2.md" etc. when taken.
-function availablePath(app: App, folder: string, name: string): string {
+export function availablePath(app: App, folder: string, name: string): string {
 	const base = name.replace(/[\\/:*?"<>|#^[\]]/g, '').trim() || 'Untitled';
 	for (let i = 1; ; i++) {
 		const path = normalizePath(`${folder}/${i === 1 ? base : `${base} ${i}`}.md`);

@@ -5,6 +5,7 @@ import { CREATURE_BLOCK, renderCreatureBlock } from './blocks/creature';
 import { MOUNT_BLOCK, renderMountBlock } from './blocks/mount';
 import { referenceBlocks } from './blocks/reference';
 import { renderSkillBlock, renderSpellBlock, SKILL_BLOCK, SPELL_BLOCK } from './blocks/skill';
+import { registerRaceClassBuilder } from './builder/index';
 import { registerCallouts } from './callouts';
 import { registerMobForge } from './forge/index';
 import { CarlSettings, CarlSettingTab, DEFAULT_SETTINGS } from './settings';
@@ -41,6 +42,7 @@ export default class CarlPlugin extends Plugin {
 		registerCallouts(this);
 		registerTemplateCommands(this);
 		registerMobForge(this);
+		registerRaceClassBuilder(this);
 		this.addSettingTab(new CarlSettingTab(this.app, this));
 	}
 

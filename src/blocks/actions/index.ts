@@ -4,7 +4,7 @@ import { NoteLink, parseLinks } from '../../rules/items';
 import { sizeValue } from '../../rules/size';
 import { CheckKind, difficulty } from '../../rules/skillnotes';
 import { collectStats, formatMod, statKey, statMod } from '../../rules/stats';
-import { applyPassive, AttackPlan, attackPlans, buildSheet, DEFAULT_HEALTH_SLOTS, Sheet, SkillLine } from '../character/model';
+import { applyPassive, AttackPlan, attackPlans, buildSheet, CheckExtras, DEFAULT_HEALTH_SLOTS, Sheet, SkillLine } from '../character/model';
 import { listEntries } from '../character/ui';
 import { LiveBlock, readPair, RenderMarkdown } from '../shared';
 import { asText, isRecord, titleCase, toEntries, toRecord } from '../yaml';
@@ -152,8 +152,9 @@ class ActionsBlock extends LiveBlock {
 					rollEvade: () => {
 						const { natural, shown } = rollD20('normal');
 						const parts = modText([['DEX', sheet.evade.dex], ['buffs', sheet.evade.buffs]]);
-						const total = natural + sheet.evade.total;
-						return { total, text: `${name}'s Evade ${shown} ${parts} = ${total}` };
+						const extra = rollExtraDice(sheet.checkExtras('evade').dice, { F: null, S: null, stats: sheet.statMods });
+						const total = natural + sheet.evade.total + (extra?.total ?? 0);
+						return { total, text: `${name}'s Evade ${shown} ${parts}${extra ? ` + ${extra.detail}` : ''} = ${total}` };
 					},
 				};
 			}
@@ -211,7 +212,7 @@ class ActionsBlock extends LiveBlock {
 			}
 			// A crawler's slots are worth their enhanced CON mod (gear and buffs included).
 			const tracker = isCrawler
-				? noteTracker(app, file, props, true, sheet.mod('con'))
+				? noteTracker(app, file, props, true, sheet.mod(sheet.healthStat))
 				: encounterTracker(data, f.member.key, props, save);
 			renderHealth(panel, tracker);
 			renderMana(panel, app, file, props);
@@ -238,7 +239,7 @@ class ActionsBlock extends LiveBlock {
 				evaders.push({
 					name: fighter.name,
 					roll: (label, target) =>
-						rollCheck(ctx, `Evade vs ${label}`, [['DEX', sheet.evade.dex], ['buffs', sheet.evade.buffs]], target),
+						rollCheck(ctx, `Evade vs ${label}`, [['DEX', sheet.evade.dex], ['buffs', sheet.evade.buffs]], target, sheet.checkExtras('evade')),
 				});
 			}
 		}
@@ -523,13 +524,16 @@ function renderChecks(root: HTMLElement, ctx: RollContext, sheet: Sheet, props: 
 	const body = section(root, 'Checks').createDiv({ cls: 'carl-buttons' });
 	for (const stat of sheet.stats) {
 		const mod = sheet.mod(stat.key);
-		button(body, `${titleCase(stat.key)} ${formatMod(mod)}`, () =>
-			rollCheck(ctx, `${titleCase(stat.name)} check`, [[titleCase(stat.key), mod]], ctx.target('stat')),
+		const extras = sheet.checkExtras(stat.key);
+		const tags = [extras.dice && `+${extras.dice}`, extras.advantage && 'adv'].filter(Boolean).join(' ');
+		button(body, `${titleCase(stat.key)} ${formatMod(mod)}${tags ? ` ${tags}` : ''}`, () =>
+			rollCheck(ctx, `${titleCase(stat.name)} check`, [[titleCase(stat.key), mod]], ctx.target('stat'), extras),
 		);
 	}
 	if (isCrawler) {
-		button(body, `Evade ${formatMod(sheet.evade.total)}`, () =>
-			rollCheck(ctx, 'Evade', [['DEX', sheet.evade.dex], ['buffs', sheet.evade.buffs]], ctx.target(null)),
+		const extras = sheet.checkExtras('evade');
+		button(body, `Evade ${formatMod(sheet.evade.total)}${extras.dice ? ` +${extras.dice}` : ''}`, () =>
+			rollCheck(ctx, 'Evade', [['DEX', sheet.evade.dex], ['buffs', sheet.evade.buffs]], ctx.target(null), extras),
 		);
 	} else if (props.evade != null) {
 		const evade = resolveNumber(asText(props.evade), ctx.vars);
@@ -706,11 +710,18 @@ function inventoryQuantity(inventory: unknown, name: string): number | null {
 
 // ── Rolling ──────────────────────────────────────────────────────────
 
-function rollCheck(ctx: RollContext, label: string, mods: [string, number][], target: number | null) {
-	const { natural, shown } = rollD20(ctx.mode);
-	const total = natural + mods.reduce((sum, [, m]) => sum + m, 0);
+// `extras` are a race or class's: Advantage on the stat's checks (cancelling a Disadvantage) and dice added to it.
+function rollCheck(ctx: RollContext, label: string, mods: [string, number][], target: number | null, extras?: CheckExtras) {
+	const mode: RollMode = extras?.advantage ? (ctx.mode === 'disadvantage' ? 'normal' : 'advantage') : ctx.mode;
+	const { natural, shown } = rollD20(mode);
+	const extra = rollExtraDice(extras?.dice ?? '', ctx.vars);
+	const total = natural + mods.reduce((sum, [, m]) => sum + m, 0) + (extra?.total ?? 0);
 	const degree = degreeOf(natural, total, target);
-	ctx.show(`**${label}**: ${shown} ${modText(mods)} = **${total}**${describe(target, degree)}`);
+	ctx.show(`**${label}**: ${shown} ${modText(mods)}${extra ? ` + ${extra.detail}` : ''} = **${total}**${describe(target, degree)}`);
+}
+
+function rollExtraDice(dice: string, vars: FormulaVars) {
+	return dice ? rollFormula(dice, vars) : null;
 }
 
 // "+ 3 DEX + 1 buffs", skipping zeros.

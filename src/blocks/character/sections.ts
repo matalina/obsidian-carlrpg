@@ -85,7 +85,8 @@ export function renderSkills(root: HTMLElement, sheet: Sheet, md: RenderMarkdown
 			cls: skill.rankSources.length ? 'carl-center is-natural' : 'carl-center',
 			text: skill.rank == null ? '' : String(skill.rank),
 		});
-		if (skill.rankSources.length) setTooltip(rank, skill.rankSources.join('\n'));
+		const rankNotes = [...skill.rankSources, ...(skill.rank20 ? ['Can be raised to Rank 20'] : [])];
+		if (rankNotes.length) setTooltip(rank, rankNotes.join('\n'));
 		row.createEl('td', {
 			cls: 'carl-center',
 			text: skill.stat ? `${titleCase(statKey(skill.stat))} ${formatMod(sheet.mod(skill.stat))}` : '',

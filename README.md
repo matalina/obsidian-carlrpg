@@ -148,7 +148,8 @@ attacks:
       stat: str            # to hit = rank + enhanced STR mod
       dice: 1d4
       damage-stat: str     # damage = dice + enhanced STR mod
-      effect: Bludgeoning.
+      damage-type: bludgeoning   # else the type in the skill's note, when the entry is a link to one
+      effect: Knocks the target prone.
 skills:
   - pugilism:
       rank: 5              # trained rank, before race/class ranks
@@ -191,11 +192,13 @@ sponsors: ["[[Valtay Corporation]]"]
 | Unenhanced stat | listed stat + race and class `bonuses` |
 | Enhanced stat | unenhanced + gear + first 3 external buffs |
 | Stat mod | from the enhanced score, using Table 9 |
-| Health slot value | enhanced CON mod |
-| Evade | d20 + DEX mod + buffs (`evade` bonuses + `evade-buffs`) |
+| Health slot value | enhanced CON mod, or the race/class `health-stat` mod |
+| Evade | d20 + DEX mod + buffs (`evade` bonuses + `evade-buffs`), + any race/class `check-dice: { evade }` |
 | DR | armor (gear `dr` bonuses) + buffs (buff/race/class `dr` + `dr-buffs`) |
-| Skill rank | listed rank + race and class `skills` ranks |
-| Attack to hit / damage | `rank` + stat mod / `dice` + `damage-stat` mod |
+| Skill rank | listed rank + race and class `skills` ranks + `stat-skills` for the skill's stat |
+| Capped stat | a race/class `stat-cap` stops the score there, gear and buffs included |
+| Size | the crawler's `size`, else the race's |
+| Attack to hit / damage | `rank` + stat mod / `dice` + `damage-stat` mod + `damage-type` |
 
 Hover any score with a coloured or underlined value to see where it came from. Write `to-hit` or `damage` out in full on an attack to skip the calculation.
 
@@ -250,6 +253,23 @@ upgrades:
   10: +1d6 base damage
   15: +1d6 base damage
 ```
+
+**Build benefits and detriments** — the menu options that change numbers on the sheet have their own properties, so the sheet applies them. The [race & class builder](#race--class-builder) writes them for you:
+
+```yaml
+bonuses: { dr: 1, move: 5, step: 5 }   # +1 DR Buff, +5ft Move, +5 Step
+resistances: [Psychic]          # half damage
+immunities: [Poison]
+vulnerabilities: [Necrotic]     # double damage
+stat-skills: { int: 1 }         # +1 to every Skill that uses INT; −1 is a detriment
+stat-advantage: [int]           # Advantage on all INT checks
+check-dice: { evade: 1d4 }      # added to Evade, or to a stat's checks: { dex: 1d4 }
+health-stat: cha                # Health Bar slots use the CHA mod instead of CON
+stat-cap: { cha: 10 }           # CHA can't go past 10, even with gear and potions
+rank-20: [Spear]                # Skills that can be raised to Rank 20, or [all]
+```
+
+On the sheet: resistances, immunities and vulnerabilities are listed under DR; a stat with Advantage, a check die or the Health Bar swap says so under its mod; a Skill that can reach Rank 20 says so in its rank's tooltip. The actions widget rolls those stat checks and Evade with the Advantage and the extra die. A crawler can list any of these properties too, for benefits from somewhere else. Everything else on the menu stays an ability line.
 
 The crawler records how they split the points, and the sheet adds them to the unenhanced stats (the tooltip shows "+2 Barbarian (split)"). Points not split yet are listed in the Racial / Class abilities panel. `move` and `step` bonuses are added to the crawler's listed Move and Step.
 
@@ -499,6 +519,16 @@ Traits are never rolled. The **Traits** section of the panel starts empty; selec
 
 To add a trait to a note later, open it and run **Add trait to this note**. The trait is added to the note's `traits` list (replacing the template's `trait name: details` placeholder) and the rest of its properties are left as they are.
 
+## Race & class builder
+
+A sidebar calculator for the Race & Class Point Build (Core Rulebook pp. 158–161). Open it from the hammer icon in the ribbon or the **Open race & class builder** command.
+
+1. Choose **Race** (25 points) or **Class** (30 points), name it, and set Earth, the class type or the size.
+2. Pick **benefits** from the menu, grouped by tier with their cost. Options that change the sheet ask for what they need — the stat, the Skill and Ranks, the damage type, the natural attack's name, stat and type — and cost per unit or per name where the book does (+1 to two Skills at 2 Ranks is 8 points). Every other option becomes an ability line you can reword. **A benefit of your own** takes any text at a cost you set, for the ones you agree with your GM.
+3. Add **detriments** for extra points: stat and Skill penalties earn 1 per −2 (counted across all of them), −1 to all Skills under a stat earns 1 each, and the rest earn their tier's points. Only 5 extra points count, from at most 5 detriments.
+4. The bar at the top shows the points left and anything to fix: over budget, points left over (they're lost), more than +3 DR, the detriment limits, a pick still missing its name. The preview draws the `carl-race` or `carl-class` card as you go.
+5. Select **Create note** to make the note from your race or class template, with `source: Homebrew`. A natural attack also gets its own Skill note — 1d6 or 1d8 + the stat mod and type, one more die at Rank 5, 10 and 15 — unless a note with that name exists. The copy icon puts the same text on the clipboard.
+
 ## Templates and commands
 
 | Command | Does |
@@ -506,6 +536,7 @@ To add a trait to a note later, open it and run **Add trait to this note**. The 
 | **Create template files** | Writes a template for every type — `mob`, `npc`, `pet`, `crawler`, `item`, `race`, `class`, `skill`, `spell`, `mount`, `sponsor`, `deity`, `debuff`, `damage-type`, `achievement` — into your templates folder, with every property stubbed out. Existing files are never overwritten, so your edits survive. |
 | **Open mob forge** | Opens the [mob forge](#mob-forge) panel in the right sidebar. |
 | **Add trait to this note** | Adds a trait to the open note's `traits` list. |
+| **Open race & class builder** | Opens the [race & class builder](#race--class-builder) panel in the right sidebar. |
 | **New mob**, **New NPC**, **New crawler**, … | Asks for a name and creates the note in that type's folder (`mobs/`, `npcs/`, `crawlers/`…), then opens it. Uses your copy of the template from the templates folder when there is one, otherwise the built-in one. |
 
 `{{title}}` and `{{date}}` in a template are filled in, the same placeholders the core Templates plugin uses — so the files also work with **Templates: Insert template**.

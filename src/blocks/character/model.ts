@@ -1,9 +1,11 @@
 import { App } from 'obsidian';
+import { BuildTraits, canReachRank20, mergeBuildTraits, readBuildTraits } from '../../rules/build';
 import { Item, Linked, linkedName, parseLink, parseLinks, readBonuses, resolveItem, resolveLink, resolveValue } from '../../rules/items';
 import { collectStats, STATS, statKey, statMod } from '../../rules/stats';
 import {
 	addBaseDice,
 	checkLabel,
+	damageType,
 	passiveApplies,
 	passiveEffect,
 	PassiveEffect,
@@ -58,6 +60,8 @@ export interface SkillLine {
 	info: SkillInfo | null;
 	/** From the `spells` list. */
 	spell: boolean;
+	/** A race or class lets it go to Rank 20. */
+	rank20: boolean;
 }
 
 export interface StatLine {
@@ -103,6 +107,19 @@ export interface Sheet {
 	step: string;
 	/** Race/class stat points the crawler hasn't split yet (`race-stats` / `class-stats`). */
 	unspentStatPoints: { race: UnspentPoints[]; class: UnspentPoints[] };
+	/** Build benefits and detriments from the race, the class and the crawler's own properties. */
+	traits: BuildTraits;
+	/** The stat whose mod each Health Bar slot is worth: CON unless a race or class swaps it. */
+	healthStat: string;
+	/** The crawler's `size`, else the race's. */
+	size: unknown;
+	/** Advantage and extra dice on a stat's checks, or on Evade (`evade`). */
+	checkExtras: (key: string) => CheckExtras;
+}
+
+export interface CheckExtras {
+	advantage: boolean;
+	dice: string;
 }
 
 export interface DebuffEntry {
@@ -137,6 +154,11 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 	const sponsors = (Array.isArray(data.sponsors) ? data.sponsors : data.sponsors == null ? [] : [data.sponsors])
 		.flatMap((s) => linked(s) ?? []);
 	const grants = [race, cls].flatMap((l) => l ?? []);
+	const traitSources: [name: string, traits: BuildTraits][] = [
+		...grants.map((g): [string, BuildTraits] => [linkedName(g), readBuildTraits(g.props)]),
+		['own', readBuildTraits(data)],
+	];
+	const traits = mergeBuildTraits(traitSources.map(([, t]) => t));
 	const floor = data.floor == null || data.floor === '' ? null : Number(data.floor);
 	const skills = skillLines(app, sourcePath, data, grants, 'skills', floor);
 	const spells = skillLines(app, sourcePath, data, grants, 'spells', floor);
@@ -156,7 +178,20 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 		...(classSplit?.bonuses.size ? [{ name: `${linkedName(cls!)} (split)`, bonuses: classSplit.bonuses }] : []),
 	];
 	const enhancements = [...gearItems, ...activeBuffs].map(source);
-	const stats = statLines(data, natural, enhancements);
+	const stats = statLines(data, natural, enhancements, traits.statCap);
+	const statOf = (line: SkillLine) => (line.stat ? statKey(line.stat) : '');
+	// "+1 to all INT Skills" (or −1): every ranked skill that uses the stat.
+	for (const [name, t] of traitSources) {
+		for (const [key, amount] of t.statSkills) {
+			for (const line of skills) {
+				if (line.rank == null || statOf(line) !== key) continue;
+				if (!line.rankSources.length) line.rankSources.push(`${line.rank} trained`);
+				line.rank += amount;
+				line.rankSources.push(`${amount < 0 ? amount : `+${amount}`} ${name} (all ${key.toUpperCase()} Skills)`);
+			}
+		}
+	}
+	for (const line of [...skills, ...spells]) line.rank20 = canReachRank20(traits, line.name);
 	const mod = (stat: string) => {
 		const line = stats.find((s) => s.key === statKey(stat));
 		return line ? statMod(line.enhanced) : 0;
@@ -198,6 +233,13 @@ export function buildSheet(app: App, data: Record<string, unknown>, sourcePath: 
 		move: addToMeasure(asText(data.move), total(natural, 'move')),
 		step: addToMeasure(asText(data.step), total(natural, 'step')),
 		unspentStatPoints: { race: raceSplit?.unspent ?? [], class: classSplit?.unspent ?? [] },
+		traits,
+		healthStat: traits.healthStat || 'con',
+		size: data.size == null || data.size === '' ? race?.props.size : data.size,
+		checkExtras: (key) => ({
+			advantage: traits.statAdvantage.includes(statKey(key)),
+			dice: traits.checkDice.get(statKey(key)) ?? '',
+		}),
 	};
 }
 
@@ -224,7 +266,12 @@ function source(linked: Linked): BonusSource {
 
 // Always shows the five stats (missing ones as 0), plus any extra stats the author listed.
 // unenhanced = listed value + race/class bonuses; enhanced = unenhanced + gear/buff bonuses.
-function statLines(data: Record<string, unknown>, natural: BonusSource[], enhancements: BonusSource[]): StatLine[] {
+function statLines(
+	data: Record<string, unknown>,
+	natural: BonusSource[],
+	enhancements: BonusSource[],
+	caps: Map<string, number>,
+): StatLine[] {
 	const given = collectStats(data);
 	const lines = [
 		...STATS.map(([key, name]) => given.find((s) => s.key === key) ?? { name, key, value: 0 }),
@@ -235,8 +282,14 @@ function statLines(data: Record<string, unknown>, natural: BonusSource[], enhanc
 		const baseSources = [`${listed} listed`];
 		const base = applyBonuses(listed, key, natural, baseSources);
 		const sources = [`${base} unenhanced`];
-		const enhanced = applyBonuses(base, key, enhancements, sources);
-		return { name, key, base, enhanced, sources, baseSources };
+		let enhanced = applyBonuses(base, key, enhancements, sources);
+		// A capped stat can't go past its cap, "even with magic gear and potions".
+		const cap = caps.get(key);
+		if (cap != null && enhanced > cap) {
+			enhanced = cap;
+			sources.push(`capped at ${cap}`);
+		}
+		return { name, key, base: cap != null ? Math.min(base, cap) : base, enhanced, sources, baseSources };
 	});
 }
 
@@ -273,6 +326,7 @@ function skillLines(
 		note: null,
 		info: null,
 		spell: key === 'spells',
+		rank20: false,
 	});
 	const parsed: SkillLine[] = toEntries(data[key]).map(([name, details]) => {
 		const f = isRecord(details) || Array.isArray(details) ? toRecord(details) : { rank: details };
@@ -413,8 +467,13 @@ export function attackPlans(sheet: Sheet): AttackPlan[] {
 		const f = toRecord(details);
 		const rank = Number(f.rank) || 0;
 		const stat = asText(f.stat);
-		const damageMod = f['damage-stat'] == null ? '' : ` + ${statKey(asText(f['damage-stat'])).toUpperCase()}`;
-		const damage = f.damage != null ? asText(f.damage) : f.dice != null ? `${asText(f.dice)}${damageMod}` : '';
+		const damageStat = asText(f['damage-stat']);
+		const damageMod = damageStat ? ` + ${statKey(damageStat).toUpperCase()}` : '';
+		// `damage-type`, else the type in the skill or spell note the entry names ("1d4 + STR Piercing").
+		const skill = [...sheet.skills, ...sheet.spells].find((l) => l.name.toLowerCase() === name.toLowerCase());
+		const type = titleCase(asText(f['damage-type'])) || damageType(skill?.info?.baseDamage ?? '');
+		const dice = f.dice != null && f.dice !== '' ? `${asText(f.dice)}${damageMod}${type ? ` ${type}` : ''}` : '';
+		const damage = f.damage != null && f.damage !== '' ? asText(f.damage) : dice;
 		plans.push(
 			withPassives(sheet, {
 				name: titleCase(name),

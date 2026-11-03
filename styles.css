@@ -1053,3 +1053,72 @@
 	width: 100%;
 	resize: vertical;
 }
+
+/* Race & class builder */
+.carl-builder-picker {
+	width: 100%;
+	margin-block-end: var(--size-4-2);
+}
+
+.carl-builder-tally {
+	position: sticky;
+	top: 0;
+	z-index: 1;
+	padding: var(--size-4-2);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: var(--radius-s);
+	background: var(--background-secondary);
+}
+
+.carl-builder-left {
+	font-weight: var(--font-bold);
+	font-size: 1.2em;
+}
+
+.carl-builder-left.is-over {
+	color: var(--text-error);
+}
+
+.carl-builder-label {
+	flex: 1;
+	min-width: 0;
+	font-size: var(--font-ui-small);
+}
+
+.carl-builder-cost {
+	font-weight: var(--font-bold);
+	font-variant-numeric: tabular-nums;
+}
+
+.carl-builder-fields {
+	display: flex;
+	flex-wrap: wrap;
+	gap: var(--size-2-2);
+	align-items: center;
+}
+
+.carl-builder-fields input[type='text'],
+.carl-builder-fields textarea {
+	flex: 1 1 10em;
+	min-width: 0;
+}
+
+.carl-builder-fields input[type='number'] {
+	width: 4.5em;
+}
+
+.carl-builder-check {
+	font-size: var(--font-ui-small);
+}
+
+/* Race/class extras on a stat box and the damage traits under DR. */
+.carl-stat-note {
+	color: var(--text-accent);
+	font-size: var(--font-ui-smaller);
+	text-align: center;
+}
+
+.carl-damage-traits {
+	font-size: var(--font-ui-small);
+	margin-block: var(--size-2-2);
+}
