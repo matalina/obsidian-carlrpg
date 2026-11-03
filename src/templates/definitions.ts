@@ -125,6 +125,7 @@ attacks:
       stat:
       dice:
       damage-stat:
+      damage-type:
       effect:
 skills:
   - skill name:

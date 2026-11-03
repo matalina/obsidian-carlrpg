@@ -257,6 +257,11 @@ export function passiveApplies(info: SkillInfo, attackName: string, attackType: 
 }
 
 /** Inserts extra base dice right after the formula's leading dice term, so a crit doubles them too. */
+/** "1d4 + STR Piercing" → "Piercing"; "" when the formula names no damage type. */
+export function damageType(formula: string): string {
+	return /(?:^|[\s\d])([A-Z][a-z][\w-]*(?: [A-Z][a-z][\w-]*)*)\s*$/.exec(formula)?.[1] ?? '';
+}
+
 export function addBaseDice(formula: string, dice: string[]): string {
 	if (!dice.length) return formula;
 	const match = /^\s*(\d*d\d+)(.*)$/.exec(formula);

@@ -15,7 +15,7 @@ export function renderTop(root: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 	renderIdentity(main, sheet, md);
 
 	const hp = readPair(sheet.data, 'hp', ['slots', 'current']);
-	renderHealth(main, hp.slots ?? DEFAULT_HEALTH_SLOTS, hp.current, sheet.mod('con'), true);
+	renderHealth(main, hp.slots ?? DEFAULT_HEALTH_SLOTS, hp.current, sheet.mod(sheet.healthStat), true);
 
 	const statGrid = main.createDiv({ cls: 'carl-stat-grid' });
 	renderStatGrid(statGrid, sheet);
@@ -52,6 +52,15 @@ function renderStatGrid(grid: HTMLElement, sheet: Sheet) {
 		const mod = box.createDiv({ cls: 'carl-stat-mod' });
 		mod.createDiv({ cls: 'carl-field-label', text: `${stat.key.toUpperCase()} mod` });
 		mod.createDiv({ cls: 'carl-field-value', text: formatMod(statMod(stat.enhanced)) });
+
+		// Race/class extras on this stat's checks: "Advantage", "+1d4", "Health Bar".
+		const { advantage, dice } = sheet.checkExtras(stat.key);
+		const notes = [
+			advantage && 'Advantage',
+			dice && `+${dice}`,
+			sheet.healthStat === stat.key && stat.key !== 'con' && 'Health Bar',
+		].filter(Boolean);
+		if (notes.length) box.createDiv({ cls: 'carl-stat-note', text: notes.join(' · ') });
 	}
 }
 
@@ -62,7 +71,7 @@ function renderMovement(grid: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 	field(box, 'Move', sheet.move, md);
 	field(box, 'Step', sheet.step, md);
 	field(box, 'AI favor', asText(d.favor), md);
-	field(box, 'Size', formatSize(d.size), md);
+	field(box, 'Size', formatSize(sheet.size), md);
 }
 
 function renderIdentity(main: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
@@ -93,8 +102,14 @@ function renderDefenses(col: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 	field(evade, 'DEX mod', formatMod(sheet.evade.dex), md);
 	op(evade, '+');
 	field(evade, 'Buffs', formatMod(sheet.evade.buffs), md);
+	const extra = sheet.checkExtras('evade');
+	if (extra.dice) {
+		op(evade, '+');
+		field(evade, 'Race/class', extra.dice, md);
+	}
 	op(evade, '=');
-	field(evade, 'Evade total', `d20${formatMod(sheet.evade.total)}`, md, { cls: 'is-total' });
+	const evadeTotal = `d20${formatMod(sheet.evade.total)}${extra.dice ? ` + ${extra.dice}` : ''}`;
+	field(evade, 'Evade total', evadeTotal, md, { cls: 'is-total' });
 
 	const dr = col.createDiv({ cls: 'carl-formula' });
 	dr.createDiv({ cls: 'carl-formula-name', text: 'Damage resistance' });
@@ -108,12 +123,25 @@ function renderDefenses(col: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
 	const manaText = mana.max == null ? '' : `${asText(mana.max)} / ${asText(mana.current ?? mana.max)}`;
 	field(dr, 'Max mana / current', manaText, md, { cls: 'carl-mana' });
 
+	renderDamageTraits(col, sheet, md);
+
 	// Debuffs and external buffs side by side under the formulas.
 	const status = col.createDiv({ cls: 'carl-status' });
 	const debuffs = status.createDiv({ cls: 'carl-debuffs' });
 	debuffs.createDiv({ cls: 'carl-field-label', text: 'Debuffs' });
 	renderDebuffs(debuffs.createDiv({ cls: 'carl-field-value' }), sheet, md);
 	renderBuffs(status, sheet, md);
+}
+
+// "Resist Fire · Immune Poison · Vulnerable Necrotic" from the race, class and crawler.
+function renderDamageTraits(col: HTMLElement, sheet: Sheet, md: RenderMarkdown) {
+	const { resistances, immunities, vulnerabilities } = sheet.traits;
+	const parts = [
+		resistances.length && `**Resist** ${resistances.join(', ')}`,
+		immunities.length && `**Immune** ${immunities.join(', ')}`,
+		vulnerabilities.length && `**Vulnerable** ${vulnerabilities.join(', ')}`,
+	].filter(Boolean);
+	if (parts.length) md(parts.join(' · '), col.createDiv({ cls: 'carl-damage-traits' }));
 }
 
 // Each debuff with its note's effect and duration (or its mechanics when it has no effect text).

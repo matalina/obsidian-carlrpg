@@ -1,4 +1,5 @@
 import { App, MarkdownPostProcessorContext, TFile } from 'obsidian';
+import { BUILD_PROPERTIES, describeBuildTraits, readBuildTraits } from '../rules/build';
 import { bonusLabel } from '../rules/items';
 import { formatSize } from '../rules/size';
 import { describeSkillBonuses, readSkillBonuses } from '../rules/skills';
@@ -35,6 +36,8 @@ interface ReferenceKind {
 	body?: (block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) => void;
 }
 
+export const RACE_KNOWN = ['name', 'earth', 'size', 'bonuses', 'stat-points', 'skills', 'spells', 'description', 'abilities', ...BUILD_PROPERTIES];
+
 const KINDS: ReferenceKind[] = [
 	{
 		block: ITEM_BLOCK,
@@ -47,12 +50,12 @@ const KINDS: ReferenceKind[] = [
 	{
 		block: RACE_BLOCK,
 		subtitle: () => 'Race',
-		known: ['name', 'earth', 'size', 'bonuses', 'stat-points', 'skills', 'spells', 'description', 'abilities'],
+		known: RACE_KNOWN,
 	},
 	{
 		block: CLASS_BLOCK,
 		subtitle: () => 'Class',
-		known: ['name', 'earth', 'class-type', 'size', 'bonuses', 'stat-points', 'skills', 'spells', 'description', 'abilities'],
+		known: ['class-type', ...RACE_KNOWN],
 	},
 	{
 		block: SPONSOR_BLOCK,
@@ -89,7 +92,7 @@ class ReferenceBlock extends LiveBlock {
 		header.createDiv({ cls: 'carl-subtitle', text: this.kind.subtitle(data) });
 
 		if (this.kind.body) this.kind.body(block, data, md);
-		else this.renderTraits(block, data, md);
+		else renderTraits(block, data, md, this.kind.known);
 		if (this.kind.crawlers) this.renderCrawlers(block, data, md);
 	}
 
@@ -108,40 +111,41 @@ class ReferenceBlock extends LiveBlock {
 		const list = section.createEl('ul', { cls: 'carl-trait-list' });
 		for (const crawler of crawlers) md(crawler, list.createEl('li'));
 	}
+}
 
-	// "Class Type: Mage", the description, then "Size: Medium (4)", "+2 Intelligence and Dexterity",
-	// "−2 Constitution and Charisma", "+2 Climbing and Perception Skills", each ability, and any other property.
-	private renderTraits(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown) {
-		const classType = asText(data['class-type']);
-		if (classType) md(`**Class Type:** ${classType}`, block.createDiv({ cls: 'carl-class-type' }));
-		const description = asText(data.description);
-		if (description) md(description, block.createDiv({ cls: 'carl-description' }));
+// "Class Type: Mage", the description, then "Size: Medium (4)", "+2 Intelligence and Dexterity",
+// "−2 Constitution and Charisma", "+2 Climbing and Perception Skills", each ability, and any other property.
+export function renderTraits(block: HTMLElement, data: Record<string, unknown>, md: RenderMarkdown, known: string[]) {
+	const classType = asText(data['class-type']);
+	if (classType) md(`**Class Type:** ${classType}`, block.createDiv({ cls: 'carl-class-type' }));
+	const description = asText(data.description);
+	if (description) md(description, block.createDiv({ cls: 'carl-description' }));
 
-		const bullets: string[] = [];
-		const size = formatSize(data.size);
-		if (size) bullets.push(`Size: ${size}`);
-		bullets.push(...describeBonuses(bonusEntries(data)));
-		bullets.push(...readStatPools(data).map(describeStatPool));
-		// Skill and spell lines by rank, highest first, spells before skills at the same rank.
-		const ranked = [
-			...describeSkillBonuses(readSkillBonuses(data, 'spells'), 'Spell'),
-			...describeSkillBonuses(readSkillBonuses(data)),
-		];
-		// Lines without a leading rank ("… at Rank = Floor") go last.
-		const rankOf = (line: string) => (Number.isNaN(parseFloat(line)) ? -Infinity : parseFloat(line));
-		bullets.push(...ranked.sort((a, b) => (rankOf(a) === rankOf(b) ? 0 : rankOf(b) > rankOf(a) ? 1 : -1)));
-		for (const [name, text] of toEntries(data.abilities)) {
-			bullets.push(text == null ? name : `**${titleCase(name)}:** ${asText(text)}`);
-		}
-		for (const [key, value] of Object.entries(data)) {
-			if (value == null || this.kind.known.includes(key) || HIDDEN_PROPERTIES.has(key)) continue;
-			bullets.push(`${titleCase(key)}: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
-		}
-		if (!bullets.length) return;
-
-		const list = block.createEl('ul', { cls: 'carl-trait-list' });
-		for (const bullet of bullets) md(bullet, list.createEl('li'));
+	const bullets: string[] = [];
+	const size = formatSize(data.size);
+	if (size) bullets.push(`Size: ${size}`);
+	bullets.push(...describeBonuses(bonusEntries(data)));
+	bullets.push(...readStatPools(data).map(describeStatPool));
+	// Skill and spell lines by rank, highest first, spells before skills at the same rank.
+	const ranked = [
+		...describeSkillBonuses(readSkillBonuses(data, 'spells'), 'Spell'),
+		...describeSkillBonuses(readSkillBonuses(data)),
+	];
+	// Lines without a leading rank ("… at Rank = Floor") go last.
+	const rankOf = (line: string) => (Number.isNaN(parseFloat(line)) ? -Infinity : parseFloat(line));
+	bullets.push(...ranked.sort((a, b) => (rankOf(a) === rankOf(b) ? 0 : rankOf(b) > rankOf(a) ? 1 : -1)));
+	for (const [name, text] of toEntries(data.abilities)) {
+		bullets.push(text == null ? name : `**${titleCase(name)}:** ${asText(text)}`);
 	}
+	bullets.push(...describeBuildTraits(readBuildTraits(data)));
+	for (const [key, value] of Object.entries(data)) {
+		if (value == null || known.includes(key) || HIDDEN_PROPERTIES.has(key)) continue;
+		bullets.push(`${titleCase(key)}: ${typeof value === 'string' ? value : JSON.stringify(value)}`);
+	}
+	if (!bullets.length) return;
+
+	const list = block.createEl('ul', { cls: 'carl-trait-list' });
+	for (const bullet of bullets) md(bullet, list.createEl('li'));
 }
 
 function bonusEntries(data: Record<string, unknown>): [key: string, amount: number][] {
