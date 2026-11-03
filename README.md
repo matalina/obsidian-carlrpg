@@ -565,7 +565,7 @@ Source layout:
 
 ```
 src/
-  main.ts                 registers the blocks, commands and the mob forge view
+  main.ts                 registers the blocks, commands, the mob forge and the race & class builder
   blocks/
     shared.ts             LiveBlock (properties/YAML + live updates), health bar, attacks
     creature.ts           carl-creature
@@ -577,7 +577,12 @@ src/
     frontmatter.ts        writes a rolled mob into the mob template
     traits.ts             Add trait command and modal
     view.ts               the sidebar panel
-  rules/                  stat mods, size table, item links and bonuses, skill bonuses
+  builder/
+    menu.ts               the Race & Class Point Build menu (pp. 158–161): tiers, costs, effects
+    model.ts              point tally and limits; writes the race/class note and natural-attack Skills
+    view.ts               the sidebar panel
+  rules/                  stat mods, size table, item links and bonuses, skill bonuses,
+                          build benefits (resistances, stat-skills, health-stat, rank-20, …)
 ```
 
 ### Releasing
